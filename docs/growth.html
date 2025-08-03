@@ -1,0 +1,432 @@
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script> window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>::-webkit-scrollbar { display: none;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@10.3.3/highcharts.js"></script>
+    <script>tailwind.config = {
+  "theme": {
+    "extend": {
+      "colors": {
+        "coral": {
+          "100": "#FFE8E2",
+          "200": "#FFCFC2",
+          "300": "#FFB5A1",
+          "400": "#FF9B81",
+          "500": "#FF8160"
+        },
+        "sage": {
+          "100": "#E6F0E9",
+          "200": "#C7E0CF",
+          "300": "#A8D0B5",
+          "400": "#89C09B",
+          "500": "#6AB081"
+        }
+      },
+      "boxShadow": {
+        "soft-xs": "0 2px 10px rgba(0, 0, 0, 0.05)",
+        "soft-sm": "0 4px 15px rgba(0, 0, 0, 0.08)"
+      },
+      "fontFamily": {
+        "sans": [
+          "Inter",
+          "sans-serif"
+        ]
+      }
+    }
+  }
+};</script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif;
+            background-color: #F8F9FA;
+        }
+    </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;500;600;700;800;900&amp;display=swap"><style>
+  .highlighted-section {
+    outline: 2px solid #3F20FB;
+    background-color: rgba(63, 32, 251, 0.1);
+  }
+
+  .edit-button {
+    position: absolute;
+    z-index: 1000;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  html, body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  </style></head>
+<body>
+    <div id="app" class="h-[100vh] flex flex-col">
+        <!-- Header Section -->
+        <header id="header" class="bg-white p-4 shadow-soft-xs">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <button id="back-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 mr-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-800">成长轨迹</h1>
+                </div>
+                <div class="flex items-center">
+                    <button id="share-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </button>
+                    <button id="profile-btn" class="ml-2 w-10 h-10 rounded-full bg-sage-400 flex items-center justify-center text-white">
+                        <span class="text-sm font-medium">思</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Section -->
+        <main id="main-content" class="flex-1 overflow-y-auto p-4">
+            <!-- Summary Section -->
+            <section id="summary-section" class="mb-6">
+                <div class="bg-white rounded-2xl p-5 shadow-soft-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-gray-700">总体进展</h3>
+                        <div class="flex items-center">
+                            <button class="text-sm text-gray-500 px-3 py-1 rounded-full bg-gray-100 mr-2">周</button>
+                            <button class="text-sm text-gray-500 px-3 py-1 rounded-full bg-gray-100 mr-2">月</button>
+                            <button class="text-sm text-white px-3 py-1 rounded-full bg-coral-400">年</button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="text-center">
+                            <p class="text-3xl font-bold text-coral-500">47</p>
+                            <p class="text-xs text-gray-500">完成使命</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-3xl font-bold text-sage-500">68%</p>
+                            <p class="text-xs text-gray-500">平均完成率</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-3xl font-bold text-gray-700">16</p>
+                            <p class="text-xs text-gray-500">拖延击破</p>
+                        </div>
+                    </div>
+                    
+                    <div id="progress-chart" class="h-48 w-full"></div>
+                </div>
+            </section>
+
+            <!-- Growth Insights Section -->
+            <section id="insights-section" class="mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">成长洞察</h3>
+                <div class="bg-white rounded-2xl p-5 shadow-soft-sm mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-medium text-gray-700">常见拖延模式</h4>
+                        <span class="text-xs text-gray-500">基于过去3个月数据</span>
+                    </div>
+                    
+                    <div class="space-y-3 mb-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-sm text-gray-600">完美主义</p>
+                                <p class="text-sm text-gray-600">42%</p>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-coral-400 h-2 rounded-full" style="width: 42%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-sm text-gray-600">开始焦虑</p>
+                                <p class="text-sm text-gray-600">28%</p>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-coral-300 h-2 rounded-full" style="width: 28%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-sm text-gray-600">信息过载</p>
+                                <p class="text-sm text-gray-600">18%</p>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-coral-200 h-2 rounded-full" style="width: 18%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="text-coral-500 text-sm font-medium flex items-center">
+                        查看详细分析 <i class="fa-solid fa-chevron-right ml-1 text-xs"></i>
+                    </button>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-5 shadow-soft-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-medium text-gray-700">最有效的应对策略</h4>
+                        <span class="text-xs text-gray-500">成功率排名</span>
+                    </div>
+                    
+                    <div class="space-y-4 mb-4">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-sage-300 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-list-check text-white text-sm"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-gray-700">任务拆解法</p>
+                                <p class="text-xs text-gray-500">已成功应用于12个使命，平均提升效率32%</p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="px-2 py-1 bg-sage-100 text-sage-500 rounded-full text-xs">92%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-sage-300 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-clock text-white text-sm"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-gray-700">番茄工作法</p>
+                                <p class="text-xs text-gray-500">已成功应用于8个使命，每次专注时间提升40%</p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="px-2 py-1 bg-sage-100 text-sage-500 rounded-full text-xs">85%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-sage-300 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-brain text-white text-sm"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-gray-700">认知重构</p>
+                                <p class="text-xs text-gray-500">已成功应用于5个使命，减少焦虑感48%</p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="px-2 py-1 bg-sage-100 text-sage-500 rounded-full text-xs">78%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="text-sage-500 text-sm font-medium flex items-center">
+                        查看所有策略 <i class="fa-solid fa-chevron-right ml-1 text-xs"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Recent Milestones Section -->
+            <section id="milestones-section" class="mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-800">近期里程碑</h3>
+                    <button class="text-sm text-coral-500 flex items-center">
+                        查看全部 <i class="fa-solid fa-chevron-right ml-1 text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div id="milestone-1" class="bg-white rounded-2xl p-5 shadow-soft-sm">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-coral-200 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-trophy text-coral-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-medium text-gray-700">连续完成5个使命</p>
+                                <p class="text-xs text-gray-500">2025年7月28日</p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="px-2 py-1 bg-coral-100 text-coral-500 rounded-full text-xs">新成就</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="milestone-2" class="bg-white rounded-2xl p-5 shadow-soft-sm">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-sage-200 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-chart-line text-sage-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-medium text-gray-700">月度完成率提升20%</p>
+                                <p class="text-xs text-gray-500">2025年7月15日</p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="px-2 py-1 bg-sage-100 text-sage-500 rounded-full text-xs">进步</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="milestone-3" class="bg-white rounded-2xl p-5 shadow-soft-sm">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-lightbulb text-gray-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="font-medium text-gray-700">首次使用认知重构技巧</p>
+                                <p class="text-xs text-gray-500">2025年6月30日</p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">技能</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Growth Journal Section -->
+            <section id="journal-section" class="mb-20">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-800">成长日志</h3>
+                    <button class="text-sm text-coral-500 flex items-center">
+                        写新日志 <i class="fa-solid fa-plus ml-1 text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div id="journal-entry-1" class="bg-white rounded-2xl p-5 shadow-soft-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-medium text-gray-700">竞品分析报告复盘</h4>
+                            <span class="text-xs text-gray-500">3天前</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3 line-clamp-2">
+                            这次任务让我意识到我有"完美主义"倾向，总想一次做到最好，导致迟迟不敢开始。拆解任务后，发现其实可以循序渐进...
+                        </p>
+                        <div class="flex">
+                            <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs mr-2">完美主义</span>
+                            <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs mr-2">任务拆解</span>
+                            <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">工作</span>
+                        </div>
+                    </div>
+
+                    <div id="journal-entry-2" class="bg-white rounded-2xl p-5 shadow-soft-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-medium text-gray-700">克服求助障碍</h4>
+                            <span class="text-xs text-gray-500">1周前</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3 line-clamp-2">
+                            今天终于鼓起勇气向主管请教了项目中遇到的问题，没想到他非常乐意帮助。我一直担心显得自己能力不足，但实际上...
+                        </p>
+                        <div class="flex">
+                            <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs mr-2">自我怀疑</span>
+                            <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs mr-2">沟通</span>
+                            <span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">突破</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav id="bottom-nav" class="bg-white border-t border-gray-200 px-6 py-3">
+            <div class="flex justify-between items-center">
+                <button id="home-btn" class="flex flex-col items-center text-gray-400">
+                    <i class="fa-solid fa-house text-xl"></i>
+                    <span class="text-xs mt-1">首页</span>
+                </button>
+                <button id="missions-btn" class="flex flex-col items-center text-gray-400">
+                    <i class="fa-solid fa-list-check text-xl"></i>
+                    <span class="text-xs mt-1">使命</span>
+                </button>
+                <div class="relative -mt-8">
+                    <button id="new-mission-btn" class="w-14 h-14 rounded-full bg-coral-400 flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-plus text-xl text-white"></i>
+                    </button>
+                </div>
+                <button id="journal-btn" class="flex flex-col items-center text-coral-500">
+                    <i class="fa-solid fa-book text-xl"></i>
+                    <span class="text-xs mt-1">日志</span>
+                </button>
+                <button id="profile-nav-btn" class="flex flex-col items-center text-gray-400">
+                    <i class="fa-solid fa-user text-xl"></i>
+                    <span class="text-xs mt-1">我的</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Chat Button -->
+        <div id="chat-fab" class="fixed bottom-20 right-4">
+            <button class="w-12 h-12 rounded-full bg-sage-400 flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-comment-dots text-xl text-white"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Highcharts.chart('progress-chart', {
+                chart: {
+                    type: 'areaspline',
+                    backgroundColor: null,
+                    style: {
+                        fontFamily: 'Nunito, sans-serif'
+                    }
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    categories: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'],
+                    labels: {
+                        style: {
+                            color: '#6B7280',
+                            fontSize: '10px'
+                        }
+                    },
+                    lineWidth: 0,
+                    tickWidth: 0
+                },
+                yAxis: {
+                    title: {
+                        text: null
+                    },
+                    gridLineColor: 'rgba(0,0,0,0.05)',
+                    labels: {
+                        enabled: false
+                    }
+                },
+                tooltip: {
+                    shared: true,
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderWidth: 0,
+                    shadow: true,
+                    style: {
+                        fontSize: '12px'
+                    }
+                },
+                credits: {
+                    enabled: false
+                },
+                legend: {
+                    enabled: false
+                },
+                plotOptions: {
+                    areaspline: {
+                        fillOpacity: 0.2,
+                        marker: {
+                            enabled: false,
+                            symbol: 'circle',
+                            radius: 4,
+                            states: {
+                                hover: {
+                                    enabled: true
+                                }
+                            }
+                        }
+                    }
+                },
+                series: [{
+                    name: '完成使命',
+                    data: [3, 5, 4, 6, 8, 5, 9, 7],
+                    color: '#FF9B81'
+                }, {
+                    name: '完成率',
+                    data: [50, 55, 45, 60, 65, 60, 70, 68],
+                    color: '#89C09B'
+                }]
+            });
+        });
+    </script>
+
+</body></html>

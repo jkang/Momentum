@@ -1,0 +1,241 @@
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script> window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>::-webkit-scrollbar { display: none;}</style>
+    <script>tailwind.config = {
+  "theme": {
+    "extend": {
+      "colors": {
+        "coral": {
+          "100": "#FFE8E2",
+          "200": "#FFCFC2",
+          "300": "#FFB5A1",
+          "400": "#FF9B81",
+          "500": "#FF8160"
+        },
+        "sage": {
+          "100": "#E6F0E9",
+          "200": "#C7E0CF",
+          "300": "#A8D0B5",
+          "400": "#89C09B",
+          "500": "#6AB081"
+        },
+        "soft-bg": "#FFFBED",
+        "brand-green": "#4A5C50",
+        "brand-coral": "#FF8160"
+      },
+      "boxShadow": {
+        "soft-xs": "0 2px 10px rgba(0, 0, 0, 0.05)",
+        "soft-sm": "0 4px 15px rgba(0, 0, 0, 0.08)"
+      },
+      "keyframes": {
+        "plantGrow": {
+          "0%": {
+            "transform": "scale(0.8)",
+            "opacity": "0.5"
+          },
+          "100%": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        },
+        "fadeIn": {
+          "0%": {
+            "opacity": "0"
+          },
+          "100%": {
+            "opacity": "1"
+          }
+        },
+        "slideUp": {
+          "0%": {
+            "transform": "translateY(20px)",
+            "opacity": "0"
+          },
+          "100%": {
+            "transform": "translateY(0)",
+            "opacity": "1"
+          }
+        }
+      },
+      "animation": {
+        "plant-grow": "plantGrow 1.5s ease-out forwards",
+        "fade-in": "fadeIn 1s ease-in forwards",
+        "slide-up": "slideUp 0.8s ease-out forwards"
+      },
+      "fontFamily": {
+        "sans": [
+          "Inter",
+          "sans-serif"
+        ]
+      }
+    }
+  }
+};</script>
+    
+    <style>
+        body { font-family: 'Inter', 'Nunito', sans-serif;
+            background-color: #FFFBED;
+        }
+    </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;500;600;700;800;900&amp;display=swap"><style>
+  .highlighted-section {
+    outline: 2px solid #3F20FB;
+    background-color: rgba(63, 32, 251, 0.1);
+  }
+
+  .edit-button {
+    position: absolute;
+    z-index: 1000;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  html, body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  </style></head>
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 bg-soft-bg flex flex-col items-center justify-center z-50 overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-80 h-80 bg-coral-200/40 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-20 w-72 h-72 bg-sage-200/40 rounded-full blur-3xl"></div>
+        <div class="relative text-center px-8">
+            <div class="animate-plant-grow">
+                <img class="w-48 h-48 mx-auto mb-8" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/59ae6ad3a0-d2c17da401d51bf20358.png" alt="minimalist illustration of a small, vibrant green sapling sprouting from a mound of earth, soft pastel background, symbolizing growth and new beginnings, gentle and encouraging style">
+            </div>
+            <div class="animate-fade-in" style="animation-delay: 0.5s;">
+                <h1 class="text-4xl font-extrabold text-[#4A5568]">即刻行动</h1>
+                <p class="mt-4 text-lg text-gray-500">从今天起，和拖延温柔告别</p>
+            </div>
+        </div>
+        <div class="absolute bottom-10 text-xs text-gray-400">你的朋友 小M</div>
+    </div>
+    
+    <div id="app" class="h-[100vh] flex-col hidden bg-soft-bg">
+        <!-- Header Section -->
+        <header id="header" class="bg-soft-bg/80 backdrop-blur-sm p-4 sticky top-0 z-20">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+             <div class="w-10 h-10 rounded-full bg-sage-200 flex items-center justify-center">
+                 <span class="text-brand-green font-bold text-lg">思</span>
+             </div>
+             <h1 class="ml-3 text-xl font-bold text-brand-green">你好, 思慧</h1>
+        </div>
+        <div class="flex items-center">
+            <button id="notification-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200/50">
+                <i class="fa-regular fa-bell"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+        <!-- Main Content Section -->
+        <main id="main-content" class="flex-1 overflow-y-auto px-4 pb-24 text-center">
+            
+            <!-- Companion Welcome Section -->
+            <section id="welcome-companion-section" class="flex flex-col items-center justify-center pt-8 pb-12 animate-slide-up">
+                <div class="relative mb-6">
+                    <img class="w-48 h-48" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/6bdc7e7f6e-55bbc1cfd76cbe7f7999.png" alt="A vibrant green sapling with several healthy leaves, depicted in a minimalist, friendly illustration style, symbolizing growth and progress for a habit-building app. The plant should look slightly more mature than a brand new sprout.">
+                </div>
+                <h2 class="text-2xl font-bold text-brand-green">你的成长，我都看在眼里</h2>
+                <p class="mt-2 text-gray-500 max-w-xs mx-auto">每一个微小的进步，都是一次了不起的胜利。今天，我们从哪里开始呢？</p>
+            </section>
+
+            <!-- Quick Actions Section -->
+            <section id="quick-actions-section" class="animate-slide-up" style="animation-delay: 200ms;">
+                <div class="grid grid-cols-2 gap-4">
+                    <div id="start-new-challenge" class="bg-white rounded-2xl p-5 shadow-soft-sm text-center flex flex-col items-center justify-center hover:shadow-soft-sm transition-shadow cursor-pointer">
+                        <div class="w-12 h-12 rounded-full bg-coral-100 flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-rocket text-xl text-brand-coral"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800">开启新挑战</h3>
+                        <p class="text-xs text-gray-500 mt-1">拆解一个新挑战</p>
+                    </div>
+                    <div id="continue-challenge" class="bg-white rounded-2xl p-5 shadow-soft-sm text-center flex flex-col items-center justify-center hover:shadow-soft-sm transition-shadow cursor-pointer">
+                        <div class="w-12 h-12 rounded-full bg-sage-100 flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-person-walking text-xl text-sage-500"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800">继续进行中</h3>
+                        <p class="text-xs text-gray-500 mt-1">完成下一步</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Gentle Reminder / Insight Section -->
+            <section id="insight-reminder-section" class="mt-8 animate-slide-up" style="animation-delay: 400ms;">
+                 <div class="bg-sage-100/70 rounded-2xl p-5">
+                    <div class="flex items-start text-left">
+                        <div class="w-10 h-10 rounded-full bg-sage-300 flex-shrink-0 flex items-center justify-center mt-1">
+                            <i class="fa-solid fa-lightbulb text-white"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="font-semibold text-brand-green">还记得“竞品分析报告”吗？</p>
+                            <p class="text-gray-700 leading-relaxed text-sm mt-1">我知道开启一个大任务会有点难。别担心，我们已经拆解好了第一步，只需要10分钟就能完成。要不要现在就行动？</p>
+                            <div class="mt-4">
+                                <button class="bg-sage-400 text-white px-5 py-2 rounded-full text-sm font-medium shadow-sm hover:bg-sage-500 transition-colors">开始第一步</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation & FAB -->
+        <div id="bottom-navigation-wrapper" class="fixed bottom-0 left-0 right-0">
+             <div id="chat-fab" class="absolute bottom-20 right-4 z-10">
+    <button class="w-16 h-16 rounded-full bg-sage-400 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform hover:bg-sage-500">
+        <i class="fa-solid fa-comment-dots text-2xl text-white"></i>
+    </button>
+</div>
+            <nav id="bottom-nav" class="bg-white/80 backdrop-blur-lg border-t border-gray-100 px-6 pt-2 pb-4 rounded-t-2xl">
+                <div class="flex justify-around items-center">
+                    <button id="home-btn" class="flex flex-col items-center text-brand-coral w-16">
+                        <i class="fa-solid fa-seedling text-xl"></i>
+                        <span class="text-xs mt-1 font-semibold">主页</span>
+                    </button>
+                    <button id="challenges-btn" class="flex flex-col items-center text-gray-400 w-16">
+                        <i class="fa-solid fa-list-check text-xl"></i>
+                        <span class="text-xs mt-1">挑战</span>
+                    </button>
+                    <button id="journal-btn" class="flex flex-col items-center text-gray-400 w-16">
+                        <i class="fa-solid fa-book-open text-xl"></i>
+                        <span class="text-xs mt-1">日志</span>
+                    </button>
+                    <button id="profile-nav-btn" class="flex flex-col items-center text-gray-400 w-16">
+                        <i class="fa-regular fa-user-circle text-xl"></i>
+                        <span class="text-xs mt-1">我的</span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const splashScreen = document.getElementById('splash-screen');
+                const app = document.getElementById('app');
+
+                if (splashScreen && app) {
+                    splashScreen.style.transition = 'opacity 0.5s ease-out';
+                    splashScreen.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        splashScreen.classList.add('hidden');
+                        app.classList.remove('hidden');
+                        app.classList.add('flex'); // Ensure flex is applied
+                    }, 500); // Wait for fade out to complete
+                }
+            }, 3000); // Splash screen duration
+        });
+    </script>
+
+</body></html>

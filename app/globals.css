@@ -1,9 +1,37 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
-
-@custom-variant dark (&:is(.dark *));
+@import "tailwindcss";
+@import "tw-animate-css";
 
 :root {
+  --coral-100: #ffe8e2;
+  --coral-200: #ffcfc2;
+  --coral-300: #ffb5a1;
+  --coral-400: #ff9b81;
+  --coral-500: #ff8160;
+  --sage-100: #e6f0e9;
+  --sage-200: #c7e0cf;
+  --sage-300: #a8d0b5;
+  --sage-400: #a8d0b5;
+  --sage-500: #6ab081;
+  --soft-bg: #fffbed;
+  --brand-green: #4a5c50;
+  --brand-coral: #ff8160;
+  --gold-100: #fff7e6;
+  --gold-200: #ffe8b3;
+  --gold-300: #ffd980;
+  --gold-400: #ffca4d;
+  --gold-500: #ffbb1a;
+
+  /* 项目特定的颜色变量 */
+  --sage-green: #a8d0b5;
+  --warm-off-white: #f5f5f0;
+  --soft-gray: #6d6d6d;
+  --light-gray: #eaeae5;
+  --sunrise-coral: #ff8a65;
+  --gentle-blue: #a0c4ff;
+  --sage-light: #e9ebe4;
+  --soft-shadow: 0px 4px 16px rgba(178, 184, 163, 0.15);
+  --soft-shadow-hover: 0px 6px 20px rgba(178, 184, 163, 0.2);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -119,5 +147,408 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background-color: var(--warm-off-white);
+    color: var(--soft-gray);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  html,
+  body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+  /* Shadow utilities */
+  .shadow-soft-xs {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-soft-sm {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--soft-shadow);
+  }
+
+  .shadow-coral-glow {
+    box-shadow: 0 8px 25px rgba(255, 129, 96, 0.3);
+  }
+
+  /* Background color utilities */
+  .bg-soft-bg {
+    background-color: var(--soft-bg);
+  }
+
+  .bg-warm-off-white {
+    background-color: var(--warm-off-white);
+  }
+
+  .bg-light-gray {
+    background-color: var(--light-gray);
+  }
+
+  .bg-sage-light {
+    background-color: var(--sage-light);
+  }
+
+  .bg-sage-green {
+    background-color: var(--sage-green);
+  }
+
+  .bg-sunrise-coral {
+    background-color: var(--sunrise-coral);
+  }
+
+  .bg-gentle-blue {
+    background-color: var(--gentle-blue);
+  }
+
+  .bg-coral-100 {
+    background-color: var(--coral-100);
+  }
+
+  .bg-coral-200 {
+    background-color: var(--coral-200);
+  }
+
+  .bg-coral-300 {
+    background-color: var(--coral-300);
+  }
+
+  .bg-coral-400 {
+    background-color: var(--coral-400);
+  }
+
+  .bg-coral-500 {
+    background-color: var(--coral-500);
+  }
+
+  .bg-sage-100 {
+    background-color: var(--sage-100);
+  }
+
+  .bg-sage-200 {
+    background-color: var(--sage-200);
+  }
+
+  .bg-sage-300 {
+    background-color: var(--sage-300);
+  }
+
+  .bg-sage-400 {
+    background-color: var(--sage-400);
+  }
+
+  .bg-sage-500 {
+    background-color: var(--sage-500);
+  }
+
+  .bg-gold-100 {
+    background-color: var(--gold-100);
+  }
+
+  .bg-gold-200 {
+    background-color: var(--gold-200);
+  }
+
+  .bg-gold-300 {
+    background-color: var(--gold-300);
+  }
+
+  .bg-gold-400 {
+    background-color: var(--gold-400);
+  }
+
+  .bg-gold-500 {
+    background-color: var(--gold-500);
+  }
+
+  /* Text color utilities */
+  .text-soft-gray {
+    color: var(--soft-gray);
+  }
+
+  .text-sage-green {
+    color: var(--sage-green);
+  }
+
+  .text-sunrise-coral {
+    color: var(--sunrise-coral);
+  }
+
+  .text-gentle-blue {
+    color: var(--gentle-blue);
+  }
+
+  .text-brand-green {
+    color: var(--brand-green);
+  }
+
+  .text-brand-coral {
+    color: var(--brand-coral);
+  }
+
+  .text-coral-400 {
+    color: var(--coral-400);
+  }
+
+  .text-coral-500 {
+    color: var(--coral-500);
+  }
+
+  .text-coral-600 {
+    color: #e85d39;
+  }
+
+  .text-sage-400 {
+    color: var(--sage-400);
+  }
+
+  .text-sage-500 {
+    color: var(--sage-500);
+  }
+
+  .text-sage-600 {
+    color: #5a9969;
+  }
+
+  .text-gold-600 {
+    color: #e6a800;
+  }
+
+  .text-gold-700 {
+    color: #cc9700;
+  }
+
+  /* Border color utilities */
+  .border-light-gray {
+    border-color: var(--light-gray);
+  }
+
+  .border-sage-green {
+    border-color: var(--sage-green);
+  }
+
+  .border-sunrise-coral {
+    border-color: var(--sunrise-coral);
+  }
+
+  .border-coral-300 {
+    border-color: var(--coral-300);
+  }
+
+  .border-coral-400 {
+    border-color: var(--coral-400);
+  }
+
+  .border-sage-300 {
+    border-color: var(--sage-300);
+  }
+
+  .border-sage-400 {
+    border-color: var(--sage-400);
+  }
+
+  .border-gold-200 {
+    border-color: var(--gold-200);
+  }
+
+  .border-gold-300 {
+    border-color: var(--gold-300);
+  }
+
+  /* Hover utilities */
+  .hover\:bg-coral-400:hover {
+    background-color: var(--coral-400);
+  }
+
+  .hover\:bg-coral-500:hover {
+    background-color: var(--coral-500);
+  }
+
+  .hover\:bg-sage-400:hover {
+    background-color: var(--sage-400);
+  }
+
+  .hover\:bg-sage-500:hover {
+    background-color: var(--sage-500);
+  }
+
+  .hover\:bg-sage-green\/90:hover {
+    background-color: rgba(168, 208, 181, 0.9);
+  }
+
+  .hover\:border-sage-green\/50:hover {
+    border-color: rgba(168, 208, 181, 0.5);
+  }
+
+  .hover\:text-coral-500:hover {
+    color: var(--coral-500);
+  }
+
+  .hover\:text-sage-500:hover {
+    color: var(--sage-500);
+  }
+
+  /* Animation utilities */
+  @keyframes plantGrow {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes celebrate {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-plant-grow {
+    animation: plantGrow 1.5s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 1s ease-in forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.8s ease-out forwards;
+  }
+
+  .animate-bounce-in {
+    animation: bounceIn 0.6s ease-out;
+  }
+
+  .animate-celebrate {
+    animation: celebrate 1s ease-in-out;
+  }
+
+  .animate-pop-in {
+    animation: pop-in 0.3s ease-out forwards;
+  }
+
+  /* Special utility classes */
+  .choice-pill {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .choice-pill.selected {
+    background-color: var(--sage-100);
+    border-color: var(--sage-400);
+    color: var(--brand-green);
+  }
+
+  /* Gradient utilities */
+  .bg-gradient-to-br {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+  }
+
+  /* 项目特定的样式类 */
+  .font-sans {
+    font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  .mission-card {
+    background-color: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--soft-shadow);
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .mission-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--soft-shadow-hover);
+  }
+
+  .progress-bar-container {
+    width: 100%;
+    background-color: var(--light-gray);
+    border-radius: 9999px;
+    height: 6px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    background-color: var(--sunrise-coral);
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s ease-out;
+  }
+
+  .progress-text {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sunrise-coral);
   }
 }
