@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Target, Clock, Star, CheckCircle, ArrowLeft } from "lucide-react"
+import { Target, Clock, Star, CheckCircle, ArrowLeft, Home } from "lucide-react"
 
 interface ChallengeTask {
   id: string
@@ -126,6 +126,15 @@ export default function ChallengeTasksPage() {
     router.push("/")
   }
 
+  const handleSkipToHome = () => {
+    // 跳过挑战任务设置，直接进入主页
+    localStorage.setItem("challengeTasks", JSON.stringify([]))
+    localStorage.setItem("onboardingCompleted", "true")
+
+    // 跳转到主页面
+    router.push("/")
+  }
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "easy":
@@ -175,7 +184,13 @@ export default function ChallengeTasksPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-bold text-soft-gray">设置挑战任务</h1>
-          <div className="w-10"></div>
+          <button
+            onClick={handleSkipToHome}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-soft-gray/60 hover:bg-light-gray/50"
+            title="跳过设置，直接进入主页"
+          >
+            <Home className="w-5 h-5" />
+          </button>
         </div>
       </header>
 
@@ -234,7 +249,13 @@ export default function ChallengeTasksPage() {
                 <div className="w-16 h-16 bg-light-gray rounded-full flex items-center justify-center mx-auto mb-4">
                   <Target className="w-8 h-8 text-soft-gray/60" />
                 </div>
-                <p className="text-soft-gray/70">暂时没有推荐的任务，你可以稍后自己创建挑战。</p>
+                <p className="text-soft-gray/70 mb-4">暂时没有推荐的任务，你可以稍后自己创建挑战。</p>
+                <button
+                  onClick={handleSkipToHome}
+                  className="bg-sage-green text-white px-6 py-3 rounded-2xl font-semibold hover:bg-sage-green/90 transition-colors"
+                >
+                  直接进入主页
+                </button>
               </div>
             )}
           </div>
@@ -299,6 +320,17 @@ export default function ChallengeTasksPage() {
               重新选择
             </button>
           )}
+
+          {currentStep === 1 && (
+            <button
+              onClick={handleSkipToHome}
+              className="px-6 py-4 border border-light-gray rounded-2xl text-soft-gray hover:bg-light-gray transition-colors flex items-center"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              跳过设置
+            </button>
+          )}
+
           <button
             onClick={() => {
               if (currentStep === 1 && selectedTasks.length > 0) {

@@ -29,7 +29,7 @@ export function XiaoMAvatar({ mood = "happy", size = "md" }: XiaoMAvatarProps) {
 
   return (
     <div
-      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-sage-green to-gentle-blue flex items-center justify-center shadow-soft transition-all duration-300 hover:scale-105`}
+      className={`${sizeClasses[size]} rounded-full bg-sage-green flex items-center justify-center shadow-soft transition-all duration-300 hover:scale-105`}
     >
       <span className="text-lg">{moodEmojis[currentMood]}</span>
     </div>

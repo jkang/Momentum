@@ -1,81 +1,76 @@
 "use client"
 
-import { Home, CheckSquare, BookOpen, User, Plus, MessageCircle } from "lucide-react"
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Home, Target, MessageCircle, TrendingUp, Plus, FileText, Smartphone } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
-export function BottomNavigation() {
+const navItems = [
+  { href: "/", icon: Home, label: "主页" },
+  { href: "/challenges", icon: Target, label: "挑战" },
+  { href: "/chat", icon: MessageCircle, label: "对话" },
+  { href: "/growth", icon: TrendingUp, label: "成长" },
+]
+
+export default function BottomNavigation() {
   const pathname = usePathname()
-
-  const navItems = [
-    { id: "home", icon: Home, label: "首页", href: "/" },
-    { id: "challenges", icon: CheckSquare, label: "挑战", href: "/challenges" },
-    { id: "journal", icon: BookOpen, label: "日志", href: "/journal" },
-    { id: "profile", icon: User, label: "我的", href: "/profile" },
-  ]
+  const [showDevTools, setShowDevTools] = useState(false)
 
   return (
-    <div className="fixed bottom-0 left-0 right-0">
-      {/* Chat FAB */}
-      <div className="fixed bottom-20 right-4">
-        <Link
-          href="/chat"
-          className="w-12 h-12 rounded-full bg-sage-400 flex items-center justify-center shadow-lg hover:bg-sage-500 transition-colors"
+    <>
+      {/* Development Tools FAB */}
+      <div className="fixed bottom-20 right-4 z-50">
+        {showDevTools && (
+          <div className="flex flex-col gap-2 mb-2">
+            <Link href="/prototypes">
+              <Button
+                size="sm"
+                className="bg-gentle-blue hover:bg-blue-600 text-white shadow-lg rounded-full w-12 h-12 p-0"
+              >
+                <Smartphone className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Link href="/prd">
+              <Button
+                size="sm"
+                className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg rounded-full w-12 h-12 p-0"
+              >
+                <FileText className="w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+        <Button
+          onClick={() => setShowDevTools(!showDevTools)}
+          className="bg-sage-green hover:bg-sage-dark text-white shadow-lg rounded-full w-14 h-14 p-0"
         >
-          <MessageCircle className="w-5 h-5 text-white" />
-        </Link>
+          <Plus className={`w-6 h-6 transition-transform duration-200 ${showDevTools ? "rotate-45" : ""}`} />
+        </Button>
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="bg-white border-t border-gray-200 px-6 py-3">
-        <div className="flex justify-between items-center">
-          {navItems.slice(0, 2).map((item) => {
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-light-gray z-40">
+        <div className="flex items-center justify-around px-4 py-2">
+          {navItems.map((item) => {
             const isActive = pathname === item.href
-            const Icon = item.icon
-
             return (
               <Link
-                key={item.id}
+                key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center transition-colors ${
-                  isActive ? "text-coral-500" : "text-gray-400"
+                className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors ${
+                  isActive
+                    ? "text-sage-green bg-sage-light"
+                    : "text-soft-gray hover:text-sage-green hover:bg-sage-light/50"
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-xs mt-1">{item.label}</span>
-              </Link>
-            )
-          })}
-
-          {/* Center FAB */}
-          <div className="relative -mt-8">
-            <Link
-              href="/new-challenge"
-              className="w-14 h-14 rounded-full bg-coral-400 flex items-center justify-center shadow-lg hover:bg-coral-500 transition-colors"
-            >
-              <Plus className="w-6 h-6 text-white" />
-            </Link>
-          </div>
-
-          {navItems.slice(2).map((item) => {
-            const isActive = pathname === item.href
-            const Icon = item.icon
-
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={`flex flex-col items-center transition-colors ${
-                  isActive ? "text-coral-500" : "text-gray-400"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="text-xs mt-1">{item.label}</span>
+                <item.icon className="w-5 h-5" />
+                <span className="text-xs font-medium">{item.label}</span>
               </Link>
             )
           })}
         </div>
       </nav>
-    </div>
+    </>
   )
 }

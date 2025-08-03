@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Hand, Lightbulb, Target, Heart } from "lucide-react"
+import { Hand } from "lucide-react"
 
 interface UserProfile {
   name: string
@@ -14,7 +14,6 @@ interface UserProfile {
 export default function WelcomeNewUserPage() {
   const router = useRouter()
   const [showSplash, setShowSplash] = useState(true)
-  const [currentStep, setCurrentStep] = useState(1)
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: "",
     procrastinationAreas: [],
@@ -45,23 +44,18 @@ export default function WelcomeNewUserPage() {
   const handleContinueToChallengeTasks = () => {
     // 保存用户档案到localStorage
     localStorage.setItem("userProfile", JSON.stringify(userProfile))
+    console.log("用户档案已保存到localStorage:", userProfile)
     // 跳转到挑战任务设置页面
     router.push("/challenge-tasks")
   }
 
   const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return userProfile.name.trim().length > 0
-      case 2:
-        return userProfile.procrastinationAreas.length > 0
-      case 3:
-        return userProfile.procrastinationReasons.length > 0
-      case 4:
-        return userProfile.motivationTypes.length > 0
-      default:
-        return false
-    }
+    return (
+      userProfile.name.trim().length > 0 &&
+      userProfile.procrastinationAreas.length > 0 &&
+      userProfile.procrastinationReasons.length > 0 &&
+      userProfile.motivationTypes.length > 0
+    )
   }
 
   if (showSplash) {
@@ -91,53 +85,55 @@ export default function WelcomeNewUserPage() {
       <div className="w-full bg-light-gray h-1">
         <div
           className="bg-sage-green h-1 transition-all duration-300"
-          style={{ width: `${(currentStep / 4) * 100}%` }}
+          style={{ width: `${canProceed() ? 100 : 25}%` }}
         ></div>
       </div>
 
       <main className="flex-grow px-6 pt-8 pb-8">
-        {currentStep === 1 && (
-          <div className="text-center animate-slide-up">
-            <div className="inline-block p-4 bg-sage-light rounded-full mb-6">
-              <Hand className="w-8 h-8 text-sage-green" />
-            </div>
-            <h1 className="text-2xl font-bold text-soft-gray mb-2">你好，新朋友！我是小M</h1>
-            <p className="text-soft-gray/70 mb-8 leading-relaxed">
-              很高兴认识你。为了更好地陪伴你，可以花几分钟，让我更了解你吗？
-            </p>
-
-            <div className="text-left">
-              <h2 className="font-semibold text-soft-gray mb-4">首先，我该怎么称呼你呢？</h2>
-              <input
-                type="text"
-                value={userProfile.name}
-                onChange={(e) => handleChoiceToggle("name", e.target.value)}
-                placeholder="请输入你的名字..."
-                className="w-full p-4 border border-light-gray rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-green/50"
-              />
-            </div>
+        <div className="text-center animate-slide-up mb-8">
+          <div className="inline-block p-4 bg-sage-light rounded-full mb-6">
+            <Hand className="w-8 h-8 text-sage-green" />
           </div>
-        )}
+          <h1 className="text-2xl font-bold text-soft-gray mb-2">你好，新朋友！我是小M</h1>
+          <p className="text-soft-gray/70 mb-8 leading-relaxed">
+            很高兴认识你。为了更好地陪伴你，可以花几分钟，让我更了解你吗？
+          </p>
+        </div>
 
-        {currentStep === 2 && (
-          <div className="animate-slide-up">
-            <div className="text-center mb-8">
-              <div className="inline-block p-4 bg-sunrise-coral/10 rounded-full mb-4">
-                <Target className="w-8 h-8 text-sunrise-coral" />
-              </div>
-              <h2 className="text-xl font-bold text-soft-gray mb-2">
-                {userProfile.name}，在哪些事情上，你最容易"想做但没做"？
-              </h2>
-              <p className="text-soft-gray/70 text-sm">可以选择多个选项</p>
-            </div>
+        <div className="space-y-8">
+          {/* 第一个问题：称呼 */}
+          <div className="text-left">
+            <h2 className="font-semibold text-soft-gray mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-sage-green text-white rounded-full flex items-center justify-center text-sm">
+                1
+              </span>
+              首先，我该怎么称呼你呢？
+            </h2>
+            <input
+              type="text"
+              value={userProfile.name}
+              onChange={(e) => handleChoiceToggle("name", e.target.value)}
+              placeholder="请输入你的名字..."
+              className="w-full p-4 border border-light-gray rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-green/50 bg-white text-soft-gray"
+            />
+          </div>
 
-            <div className="space-y-3">
+          {/* 第二个问题：拖延领域 */}
+          <div>
+            <h2 className="font-semibold text-soft-gray mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-sunrise-coral text-white rounded-full flex items-center justify-center text-sm">
+                2
+              </span>
+              在哪些事情上，你最容易"想做但没做"？
+            </h2>
+            <p className="text-soft-gray/70 text-sm mb-4">可以选择多个选项</p>
+            <div className="grid grid-cols-1 gap-3">
               {["学习/工作任务", "个人成长项目", "家务整理", "健康习惯养成", "社交活动参与", "创意兴趣爱好"].map(
                 (area) => (
                   <button
                     key={area}
                     onClick={() => handleChoiceToggle("procrastinationAreas", area)}
-                    className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                    className={`w-full p-3 rounded-xl border-2 text-left transition-all text-sm ${
                       userProfile.procrastinationAreas.includes(area)
                         ? "border-sage-green bg-sage-light text-sage-green"
                         : "border-light-gray bg-white text-soft-gray hover:border-sage-green/50"
@@ -149,19 +145,17 @@ export default function WelcomeNewUserPage() {
               )}
             </div>
           </div>
-        )}
 
-        {currentStep === 3 && (
-          <div className="animate-slide-up">
-            <div className="text-center mb-8">
-              <div className="inline-block p-4 bg-gentle-blue/10 rounded-full mb-4">
-                <Lightbulb className="w-8 h-8 text-gentle-blue" />
-              </div>
-              <h2 className="text-xl font-bold text-soft-gray mb-2">你觉得，是什么让你停下了脚步？</h2>
-              <p className="text-soft-gray/70 text-sm">了解根源，才能对症下药</p>
-            </div>
-
-            <div className="space-y-3">
+          {/* 第三个问题：拖延原因 */}
+          <div>
+            <h2 className="font-semibold text-soft-gray mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-gentle-blue text-white rounded-full flex items-center justify-center text-sm">
+                3
+              </span>
+              你觉得，是什么让你停下了脚步？
+            </h2>
+            <p className="text-soft-gray/70 text-sm mb-4">了解根源，才能对症下药</p>
+            <div className="grid grid-cols-1 gap-3">
               {[
                 "害怕失败或被批评",
                 "追求完美，迟迟不敢开始",
@@ -173,7 +167,7 @@ export default function WelcomeNewUserPage() {
                 <button
                   key={reason}
                   onClick={() => handleChoiceToggle("procrastinationReasons", reason)}
-                  className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                  className={`w-full p-3 rounded-xl border-2 text-left transition-all text-sm ${
                     userProfile.procrastinationReasons.includes(reason)
                       ? "border-sage-green bg-sage-light text-sage-green"
                       : "border-light-gray bg-white text-soft-gray hover:border-sage-green/50"
@@ -184,19 +178,17 @@ export default function WelcomeNewUserPage() {
               ))}
             </div>
           </div>
-        )}
 
-        {currentStep === 4 && (
-          <div className="animate-slide-up">
-            <div className="text-center mb-8">
-              <div className="inline-block p-4 bg-sunrise-coral/10 rounded-full mb-4">
-                <Heart className="w-8 h-8 text-sunrise-coral" />
-              </div>
-              <h2 className="text-xl font-bold text-soft-gray mb-2">什么样的激励对你最有效？</h2>
-              <p className="text-soft-gray/70 text-sm">让我知道如何更好地鼓励你</p>
-            </div>
-
-            <div className="space-y-3">
+          {/* 第四个问题：激励方式 */}
+          <div>
+            <h2 className="font-semibold text-soft-gray mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-sunrise-coral text-white rounded-full flex items-center justify-center text-sm">
+                4
+              </span>
+              什么样的激励对你最有效？
+            </h2>
+            <p className="text-soft-gray/70 text-sm mb-4">让我知道如何更好地鼓励你</p>
+            <div className="grid grid-cols-1 gap-3">
               {[
                 "完成后的成就感",
                 "朋友的鼓励和陪伴",
@@ -208,7 +200,7 @@ export default function WelcomeNewUserPage() {
                 <button
                   key={motivation}
                   onClick={() => handleChoiceToggle("motivationTypes", motivation)}
-                  className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                  className={`w-full p-3 rounded-xl border-2 text-left transition-all text-sm ${
                     userProfile.motivationTypes.includes(motivation)
                       ? "border-sage-green bg-sage-light text-sage-green"
                       : "border-light-gray bg-white text-soft-gray hover:border-sage-green/50"
@@ -219,33 +211,24 @@ export default function WelcomeNewUserPage() {
               ))}
             </div>
           </div>
-        )}
+        </div>
       </main>
 
       <footer className="px-6 pb-8 pt-4">
-        <div className="flex gap-3">
-          {currentStep > 1 && (
-            <button
-              onClick={() => setCurrentStep((prev) => prev - 1)}
-              className="px-6 py-4 border border-light-gray rounded-2xl text-soft-gray hover:bg-light-gray transition-colors"
-            >
-              上一步
-            </button>
-          )}
-          <button
-            onClick={() => {
-              if (currentStep < 4) {
-                setCurrentStep((prev) => prev + 1)
-              } else {
-                handleContinueToChallengeTasks()
-              }
-            }}
-            disabled={!canProceed()}
-            className="flex-1 bg-sage-green text-white py-4 rounded-2xl font-semibold hover:bg-sage-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {currentStep < 4 ? "下一步" : "继续设置挑战任务 ✨"}
-          </button>
-        </div>
+        {canProceed() && (
+          <div className="text-center mb-4">
+            <p className="text-soft-gray text-sm">太棒了！接下来让我们一起设置你的专属挑战任务 🎯</p>
+          </div>
+        )}
+        <button
+          onClick={handleContinueToChallengeTasks}
+          disabled={!canProceed()}
+          className={`w-full text-white py-4 rounded-2xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            canProceed() ? "bg-sage-green hover:bg-sage-green/90 shadow-soft" : "bg-light-gray"
+          }`}
+        >
+          继续设置挑战任务 →
+        </button>
       </footer>
     </div>
   )
