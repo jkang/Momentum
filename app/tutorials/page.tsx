@@ -69,47 +69,47 @@ export default function TutorialsPage() {
     <div className="min-h-screen bg-momentum-cream">
       {/* 页面头部 */}
       <div className="bg-white border-b border-momentum-sage-light/30">
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <BookOpen className="h-8 w-8 text-momentum-coral" />
-              <h1 className="text-3xl font-bold text-momentum-forest">教程中心</h1>
+              <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-momentum-coral" />
+              <h1 className="text-2xl md:text-3xl font-bold text-momentum-forest">教程中心</h1>
             </div>
-            <p className="text-lg text-momentum-sage-dark max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-momentum-sage-dark max-w-2xl mx-auto leading-relaxed">
               精选实用教程，助你快速掌握现代开发技能。从基础到进阶，循序渐进提升能力。
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
         {/* 教程网格 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {TUTORIALS.map((tutorial) => {
             const Icon = tutorial.icon
             return (
-              <Card 
-                key={tutorial.slug} 
+              <Card
+                key={tutorial.slug}
                 className="group hover:shadow-lg transition-all duration-300 border-momentum-sage-light/30 overflow-hidden"
               >
-                <CardHeader className={`${tutorial.bgColor} border-b border-momentum-sage-light/20`}>
+                <CardHeader className={`${tutorial.bgColor} border-b border-momentum-sage-light/20 p-4 md:p-6`}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-lg bg-gradient-to-br ${tutorial.color} text-white`}>
-                        <Icon className="h-6 w-6" />
+                      <div className={`p-2 md:p-3 rounded-lg bg-gradient-to-br ${tutorial.color} text-white`}>
+                        <Icon className="h-5 w-5 md:h-6 md:w-6" />
                       </div>
-                      <div>
-                        <CardTitle className="text-xl text-momentum-forest group-hover:text-momentum-coral transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-lg md:text-xl text-momentum-forest group-hover:text-momentum-coral transition-colors leading-tight">
                           {tutorial.title}
                         </CardTitle>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge 
-                            variant="secondary" 
-                            className={DIFFICULTY_COLORS[tutorial.difficulty as keyof typeof DIFFICULTY_COLORS]}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge
+                            variant="secondary"
+                            className={`${DIFFICULTY_COLORS[tutorial.difficulty as keyof typeof DIFFICULTY_COLORS]} text-xs`}
                           >
                             {tutorial.difficulty}
                           </Badge>
-                          <div className="flex items-center gap-1 text-sm text-momentum-sage-dark">
+                          <div className="flex items-center gap-1 text-xs md:text-sm text-momentum-sage-dark">
                             <Clock className="h-3 w-3" />
                             {tutorial.duration}
                           </div>
@@ -118,37 +118,37 @@ export default function TutorialsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                
-                <CardContent className="p-6">
-                  <p className="text-momentum-sage-dark mb-4 leading-relaxed">
+
+                <CardContent className="p-4 md:p-6">
+                  <p className="text-sm md:text-base text-momentum-sage-dark mb-4 leading-relaxed">
                     {tutorial.description}
                   </p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
+
+                  <div className="flex flex-wrap gap-1.5 md:gap-2 mb-4">
                     {tutorial.tags.map((tag) => (
                       <Badge key={tag} variant="outline" className="text-xs border-momentum-sage-light text-momentum-sage-dark">
                         {tag}
                       </Badge>
                     ))}
                   </div>
-                  
-                  <div className="mb-6">
+
+                  <div className="mb-4 md:mb-6">
                     <div className="flex items-center gap-2 mb-2">
                       <Target className="h-4 w-4 text-momentum-coral" />
                       <span className="font-medium text-momentum-forest text-sm">学习目标</span>
                     </div>
                     <ul className="space-y-1">
                       {tutorial.objectives.map((objective, index) => (
-                        <li key={index} className="text-sm text-momentum-sage-dark flex items-center gap-2">
-                          <span className="w-1 h-1 bg-momentum-coral rounded-full"></span>
-                          {objective}
+                        <li key={index} className="text-xs md:text-sm text-momentum-sage-dark flex items-center gap-2">
+                          <span className="w-1 h-1 bg-momentum-coral rounded-full flex-shrink-0"></span>
+                          <span className="leading-relaxed">{objective}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  
+
                   <Link href={`/tutorials/${tutorial.slug}`}>
-                    <Button className="w-full bg-momentum-coral hover:bg-momentum-coral-dark text-white group">
+                    <Button className="w-full bg-momentum-coral hover:bg-momentum-coral-dark text-white group text-sm md:text-base">
                       开始学习
                       <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
@@ -160,25 +160,25 @@ export default function TutorialsPage() {
         </div>
 
         {/* 底部提示 */}
-        <Card className="mt-12 border-momentum-coral/30 bg-gradient-to-r from-momentum-coral/5 to-momentum-sage-light/5">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-2xl font-semibold text-momentum-forest mb-4">
+        <Card className="mt-8 md:mt-12 border-momentum-coral/30 bg-gradient-to-r from-momentum-coral/5 to-momentum-sage-light/5">
+          <CardContent className="p-6 md:p-8 text-center">
+            <h3 className="text-xl md:text-2xl font-semibold text-momentum-forest mb-4">
               学习路径建议
             </h3>
             <div className="max-w-3xl mx-auto">
-              <p className="text-momentum-sage-dark mb-6 leading-relaxed">
+              <p className="text-sm md:text-base text-momentum-sage-dark mb-6 leading-relaxed">
                 建议按照 <strong>GitHub → Cursor → v0 → Vercel</strong> 的顺序学习，
                 这样可以建立完整的现代开发工作流：版本控制 → AI 编程 → 快速开发 → 部署上线。
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/chat">
-                  <Button className="bg-momentum-coral hover:bg-momentum-coral-dark text-white">
+                  <Button className="bg-momentum-coral hover:bg-momentum-coral-dark text-white text-sm md:text-base">
                     <BookOpen className="h-4 w-4 mr-2" />
                     与小M讨论学习计划
                   </Button>
                 </Link>
                 <Link href="/">
-                  <Button variant="outline" className="border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10">
+                  <Button variant="outline" className="border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10 text-sm md:text-base">
                     返回首页
                   </Button>
                 </Link>

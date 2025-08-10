@@ -137,7 +137,7 @@ export default function TutorialPage() {
       if (!inline && codeString) {
         return (
           <Card className="my-6 overflow-hidden border-momentum-sage-light/30">
-            <div className="bg-gray-50 px-4 py-2 flex items-center justify-between border-b border-momentum-sage-light/30">
+            <div className="bg-gray-50 px-3 md:px-4 py-2 flex items-center justify-between border-b border-momentum-sage-light/30">
               <span className="text-sm font-medium text-momentum-sage-dark">
                 {language || '代码'}
               </span>
@@ -155,8 +155,8 @@ export default function TutorialPage() {
               </Button>
             </div>
             <CardContent className="p-0">
-              <pre className="p-4 overflow-x-auto bg-white">
-                <code className="text-sm text-gray-800 font-mono" {...props}>
+              <pre className="p-3 md:p-4 overflow-x-auto bg-white text-sm">
+                <code className="text-gray-800 font-mono leading-relaxed" {...props}>
                   {children}
                 </code>
               </pre>
@@ -250,23 +250,23 @@ export default function TutorialPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
         {/* 教程头部信息 */}
         {meta && (
-          <Card className="mb-8 border-momentum-sage-light/30 bg-gradient-to-r from-momentum-sage-light/10 to-momentum-coral/10">
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+          <Card className="mb-6 md:mb-8 border-momentum-sage-light/30 bg-gradient-to-r from-momentum-sage-light/10 to-momentum-coral/10">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-start gap-4 md:gap-6">
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-momentum-forest mb-3">
+                  <h1 className="text-2xl md:text-3xl font-bold text-momentum-forest mb-3">
                     {meta.title}
                   </h1>
-                  <p className="text-lg text-momentum-sage-dark mb-4 leading-relaxed">
+                  <p className="text-base md:text-lg text-momentum-sage-dark mb-4 leading-relaxed">
                     {meta.description}
                   </p>
 
                   <div className="flex flex-wrap gap-2 mb-4">
                     {meta.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="bg-momentum-sage-light/20 text-momentum-forest">
+                      <Badge key={tag} variant="secondary" className="bg-momentum-sage-light/20 text-momentum-forest text-xs">
                         {tag}
                       </Badge>
                     ))}
@@ -277,32 +277,32 @@ export default function TutorialPage() {
                   <Card className="bg-white/80 backdrop-blur-sm border-momentum-sage-light/30">
                     <CardContent className="p-4 space-y-4">
                       <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-momentum-coral" />
+                        <Clock className="h-4 w-4 md:h-5 md:w-5 text-momentum-coral" />
                         <div>
-                          <div className="font-medium text-momentum-forest">预计时长</div>
-                          <div className="text-sm text-momentum-sage-dark">{meta.duration}</div>
+                          <div className="font-medium text-momentum-forest text-sm md:text-base">预计时长</div>
+                          <div className="text-xs md:text-sm text-momentum-sage-dark">{meta.duration}</div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <Target className="h-5 w-5 text-momentum-coral" />
+                        <Target className="h-4 w-4 md:h-5 md:w-5 text-momentum-coral" />
                         <div>
-                          <div className="font-medium text-momentum-forest">难度等级</div>
-                          <div className="text-sm text-momentum-sage-dark">{meta.difficulty}</div>
+                          <div className="font-medium text-momentum-forest text-sm md:text-base">难度等级</div>
+                          <div className="text-xs md:text-sm text-momentum-sage-dark">{meta.difficulty}</div>
                         </div>
                       </div>
 
                       <Separator />
 
                       <div>
-                        <div className="font-medium text-momentum-forest mb-2 flex items-center gap-2">
+                        <div className="font-medium text-momentum-forest mb-2 flex items-center gap-2 text-sm md:text-base">
                           <CheckCircle2 className="h-4 w-4 text-momentum-coral" />
                           学习目标
                         </div>
                         <ul className="space-y-1">
                           {meta.objectives.map((objective, index) => (
-                            <li key={index} className="text-sm text-momentum-sage-dark flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 bg-momentum-coral rounded-full"></span>
+                            <li key={index} className="text-xs md:text-sm text-momentum-sage-dark flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 bg-momentum-coral rounded-full flex-shrink-0"></span>
                               {objective}
                             </li>
                           ))}

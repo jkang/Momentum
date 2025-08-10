@@ -16,8 +16,10 @@ export default function AboutPage() {
           </div>
           <h2 className="text-2xl font-semibold text-momentum-forest mb-2">关于 Momentum</h2>
           <p className="text-momentum-muted max-w-2xl mx-auto leading-relaxed text-sm">
-            Momentum 是一款帮助你温柔告别拖延的 AI
-            助手。我们用“更小的下一步”和“即时反馈”帮助你启动、坚持并完成关键任务。
+            Momentum 是一款帮助你温柔告别拖延的 AI助手
+          </p>
+          <p className="text-momentum-muted max-w-2xl mx-auto leading-relaxed text-sm">
+            我们用“更小的下一步”和“即时反馈”帮助你启动、坚持并完成关键任务。
           </p>
         </section>
 

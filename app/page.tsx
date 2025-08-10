@@ -186,7 +186,10 @@ export default function HomePage() {
           </div>
           <h2 className="text-2xl font-semibold text-momentum-forest mb-2">你好！我是小M</h2>
           <p className="text-momentum-muted max-w-md mx-auto leading-relaxed text-sm">
-            我专门帮助你克服拖延。告诉我你遇到的困难，我会帮你分析原因并制定行动计划。
+            我专门陪伴你克服拖延。
+          </p>
+           <p className="text-momentum-muted max-w-md mx-auto leading-relaxed text-sm">
+            告诉我你遇到的困难，我会帮你分析原因并陪伴你迈出行动。
           </p>
         </section>
 
