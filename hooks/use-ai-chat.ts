@@ -426,14 +426,14 @@ export function useAiChat() {
       }
 
       // 添加待办项
-      addTodos(pendingTodos)
+      const added = addTodos(pendingTodos)
       setPendingTodos([])
 
       // 添加确认消息
       const confirmMsg: ChatMessage = {
         id: makeId(),
         role: "assistant",
-        content: `✅ 已添加到待办清单！\n\n3秒后跳转到todolist`,
+        content: `✅ 已添加 ${added} 个行动项到待办清单！\n\n3秒后跳转到待办页查看。`,
         timestamp: now(),
       }
 
@@ -459,7 +459,7 @@ export function useAiChat() {
       const cancelMsg: ChatMessage = {
         id: makeId(),
         role: "assistant",
-        content: "好的，已取消添加。如果之后想要添加其他待办项，随时告诉我～",
+        content: "没问题，你可以再想想。如果需要调整任务拆解或有其他拖延困扰，随时告诉我！记住，要么行动，要么放下。💪",
         timestamp: now(),
       }
 
