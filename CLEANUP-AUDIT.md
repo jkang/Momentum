@@ -1,4 +1,65 @@
-/* Tailwind v4: use a single import */
+# Momentum 项目文件清理审计
+
+## 第一部分：明确保留的文件
+- `app/page.tsx` - 主页面
+- `app/layout.tsx` - 根布局
+- `app/globals.css` - 全局样式
+- `app/chat/page.tsx` - 聊天页面
+- `components/` 下所有组件文件
+- `lib/` 下所有库文件
+- `hooks/` 下所有钩子文件
+- `public/images/` 下的图片资源
+
+## 第二部分：建议删除的文件（高置信度未使用）
+
+### docs/ 目录下的 HTML 文件
+- `docs/actionlist.html` - 静态 HTML，已有对应 React 组件
+- `docs/challenge-tasks.html` - 静态 HTML，已有对应 React 页面
+- `docs/chat.html` - 静态 HTML，已有 app/chat/page.tsx
+- `docs/checkprogress.html` - 静态 HTML，功能已集成到主应用
+- `docs/growth.html` - 静态 HTML，功能已集成到主应用
+- `docs/profile.html` - 静态 HTML，功能已集成到主应用
+- `docs/welcome-newuser.html` - 静态 HTML，已有对应 React 页面
+- `docs/welcome.html` - 静态 HTML，已有对应 React 页面
+
+### js/ 目录下的 JavaScript 文件
+- `js/action_list.js` - 旧版 JS，已有 React 组件替代
+- `js/chat.js` - 旧版 JS，已有 React 聊天页面
+- `js/main.js` - 旧版 JS，功能已迁移到 React
+- `js/momentum_tree.js` - 旧版 JS，已有 React 组件
+
+### css/ 目录
+- `css/style.css` - 旧版样式，已有 Tailwind + globals.css
+
+## 第三部分：需要确认的页面文件
+
+### app/ 目录下的页面
+- `app/challenge-tasks/page.tsx` - 挑战任务页面，是否需要？
+- `app/prd/page.tsx` - PRD 文档页面，是否需要？
+- `app/prototypes/page.tsx` - 原型页面，是否需要？
+- `app/welcome-newuser/page.tsx` - 新用户欢迎页，是否需要？
+- `app/create-task/page.tsx` - 创建任务页面，是否需要？
+- `app/history/page.tsx` - 历史记录页面，是否需要？
+- `app/tutorials/[slug]/page.tsx` - 教程页面，是否需要？
+- `app/about/page.tsx` - 关于页面，是否需要？
+- `app/todolist/page.tsx` - 待办列表页面，是否需要？
+
+### 其他文件
+- `public/prd.md` - PRD 文档，如果 app/prd/page.tsx 删除则可删
+- `public/tutorials/` 下的 markdown 文件 - 如果教程页面删除则可删
+- `public/logo2` - 似乎是重复的 logo 文件
+- `app/loading.tsx` - 全局加载页面，是否需要？
+- `app/chat/loading.tsx` - 聊天加载页面，是否需要？
+
+## 建议操作
+1. 第二部分可以直接删除
+2. 第三部分请告知哪些页面功能你需要保留
+\`\`\`
+
+现在修复 `@apply rounded-momentum-lg` 错误。让我检查可能还在使用自定义类的地方：
+
+```typescriptreact file="app/globals.css"
+[v0-no-op-code-block-prefix]/* Tailwind v4: use a single import */
 @import "tailwindcss";
 @import "tw-animate-css";
 

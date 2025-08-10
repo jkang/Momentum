@@ -30,7 +30,7 @@ pnpm dev
 # 浏览器访问 http://localhost:3000
 \`\`\`
 
-第 2 步：用 Cursor 打开项目并给出“首轮提示词”
+第 2 步：用 Cursor 打开项目并给出“首轮提示��”
 1. 打开 Cursor，File → Open Folder → 选择 todo-pro 目录
 2. 在左侧文件树选中 app/page.tsx，按下 Cmd/Ctrl #43; K 打开聊天
 3. 复制以下“首轮提示词”，粘贴到 Cursor 对话框并发送：
