@@ -271,7 +271,7 @@
 
   /* Quick select card */
   .quick-select-card {
-    @apply bg-white border p-4 cursor-pointer transition-all duration-200 touch-feedback;
+    @apply bg-white border p-4 cursor-pointer transition-all duration-200;
     border-radius: 16px;
     border-color: rgba(168, 196, 169, 0.2);
     min-height: 44px;
@@ -290,6 +290,11 @@
     }
     .quick-select-card:hover {
       transform: none; /* 移动端不使用hover变换 */
+    }
+    /* 触摸反馈 */
+    .quick-select-card:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
     }
   }
 
