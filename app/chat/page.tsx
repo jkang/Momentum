@@ -169,14 +169,14 @@ export default function ChatPage() {
 
                   {/* 快捷回复按钮 */}
                   {m.role === "assistant" && m.quickReplies && m.quickReplies.length > 0 && (
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex flex-wrap gap-2 mt-3">
                       {m.quickReplies.map((reply, index) => (
                         <Button
                           key={index}
                           variant="outline"
                           size="sm"
                           onClick={() => handleQuickReply(reply.action, reply.text)}
-                          className="text-xs px-3 py-1 h-auto border-momentum-sage text-momentum-sage hover:bg-momentum-sage hover:text-white"
+                          className="text-[11px] px-2 py-1 h-6 border-momentum-sage text-momentum-sage hover:bg-momentum-sage hover:text-white rounded-full flex-shrink-0"
                         >
                           {reply.text}
                         </Button>
