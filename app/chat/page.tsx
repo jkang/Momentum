@@ -250,20 +250,18 @@ export default function ChatPage() {
                   className="resize-none border-momentum-sage-light-20 focus:border-momentum-sage focus:ring-momentum-sage/20 min-h-[44px] text-sm"
                 />
               </div>
-              {isLoading ? (
-                <Button onClick={stopGeneration} variant="outline" size="icon" className="shrink-0 bg-transparent">
+              <Button
+                onClick={isLoading ? stopGeneration : handleSend}
+                disabled={!isLoading && !inputValue.trim()}
+                size="icon"
+                className="shrink-0 bg-momentum-coral hover:bg-momentum-coral-dark text-white disabled:bg-momentum-coral/50 disabled:text-white/70"
+              >
+                {isLoading ? (
                   <Square className="w-4 h-4" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSend}
-                  disabled={!inputValue.trim()}
-                  size="icon"
-                  className="shrink-0 momentum-button-primary"
-                >
+                ) : (
                   <Send className="w-4 h-4" />
-                </Button>
-              )}
+                )}
+              </Button>
             </div>
           </div>
         </div>
