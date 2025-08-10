@@ -1,6 +1,5 @@
 /* Tailwind v4: use a single import */
 @import "tailwindcss";
-@import "tw-animate-css";
 
 /* Momentum Design System Variables */
 :root {
