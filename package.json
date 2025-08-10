@@ -60,7 +60,7 @@
     "vaul": "latest"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^2.0.7",
+    "@tailwindcss/postcss": "^4.1.11",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
