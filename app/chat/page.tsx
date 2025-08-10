@@ -91,7 +91,7 @@ export default function ChatPage() {
                   <Image src={LOGO_URL || "/placeholder.svg"} alt="小M头像" width={28} height={28} />
                 </div>
                 <div className="max-w-[80%] rounded-lg px-4 py-3 bg-momentum-white text-momentum-forest border border-momentum-sage-light-20">
-                  <div className="text-sm leading-relaxed">最近有遇到什么拖延的烦恼吗？我可以帮你一起拆解。</div>
+                  <div className="text-sm leading-relaxed">你好！我是即刻行动小M，专门帮你克服拖延。最近有遇到什么拖延的烦恼吗？</div>
                   <div className="text-[11px] mt-1 text-momentum-muted">现在就跟我说说吧～</div>
                 </div>
               </div>

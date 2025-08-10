@@ -13,15 +13,18 @@ function isProcrastinationRelated(message: string): boolean {
     '任务', '工作', '学习', '作业', '论文', '项目', '计划', '目标', '行动',
     '开始', '完成', '进度', '效率', '时间管理', '专注', '集中', '分心',
     '压力', '负担', '困难', '挑战', '阻碍', '障碍', '动机', '意志力',
-    '习惯', '坚持', '放弃', '放下', '继续', '推进', '执行', '实施'
+    '习惯', '坚持', '放弃', '放下', '继续', '推进', '执行', '实施',
+    '做不下去', '不知道怎么开始', '总是想着别的', '静不下心', '提不起兴趣'
   ]
 
   const unrelatedKeywords = [
-    '美食', '吃饭', '菜谱', '餐厅', '零食', '饮料', '咖啡', '茶',
-    '电影', '电视剧', '综艺', '明星', '娱乐', '游戏', '音乐', '小说',
-    '天气', '旅游', '景点', '购物', '衣服', '化妆', '护肤',
-    '八卦', '聊天', '闲聊', '无聊', '随便聊聊', '说说话',
-    '股票', '投资', '理财', '房价', '车', '手机', '数码产品'
+    '美食', '吃饭', '菜谱', '餐厅', '零食', '饮料', '咖啡', '茶', '好吃',
+    '电影', '电视剧', '综艺', '明星', '娱乐', '游戏', '音乐', '小说', '看剧',
+    '天气', '旅游', '景点', '购物', '衣服', '化妆', '护肤', '出去玩',
+    '八卦', '聊天', '闲聊', '无聊', '随便聊聊', '说说话', '聊点别的',
+    '股票', '投资', '理财', '房价', '车', '手机', '数码产品', '买东西',
+    '今天天气', '明天去哪', '周末干嘛', '有什么好玩的', '推荐个',
+    '你觉得', '你知道', '你听说过', '你看过', '你用过'
   ]
 
   const message_lower = message.toLowerCase()
@@ -36,12 +39,23 @@ function isProcrastinationRelated(message: string): boolean {
     return false
   }
 
+  // 检查是否是问候语或简单回应（这些通常是相关的）
+  const greetings = ['你好', '嗨', 'hi', 'hello', '谢谢', '好的', '是的', '不是', '对', '嗯']
+  if (greetings.some(greeting => message_lower.includes(greeting)) && message.length < 10) {
+    return true
+  }
+
+  // 如果消息很短且不包含明显无关词汇，认为可能是相关的
+  if (message.length < 20) {
+    return true
+  }
+
   // 默认认为是相关的（给用户更多机会）
   return true
 }
 
 // 生成边界提醒回复
-function generateBoundaryReminder(userMessage: string, conversationContext: string = ""): string {
+function generateBoundaryReminder(): string {
   const templates = [
     "亲爱的，我特别理解你想转移注意力的心情～不过作为专业的拖延克服助手，我更想帮你专注解决当前的问题。",
     "我懂你可能想放松一下，但让我们先把注意力拉回到你的拖延困扰上吧～",
@@ -137,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     // 如果是无关话题，直接返回边界提醒
     if (isOffTopic) {
-      const boundaryResponse = generateBoundaryReminder(latestUserMessage.content)
+      const boundaryResponse = generateBoundaryReminder()
 
       // 创建流式响应返回边界提醒
       const encoder = new TextEncoder()
