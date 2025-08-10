@@ -85,6 +85,18 @@ export default function HomePage() {
     }
   }
 
+  // 检查是否首次访问
+  useEffect(() => {
+    try {
+      const hasVisited = localStorage.getItem("momentum-has-visited")
+      if (!hasVisited) {
+        setShowLaunchScreen(true)
+      }
+    } catch {
+      // localStorage不可用时，不显示启动页
+    }
+  }, [])
+
   // 读取本地待办和完成统计
   useEffect(() => {
     loadTodos()
@@ -115,6 +127,12 @@ export default function HomePage() {
     window.dispatchEvent(new CustomEvent("todos:updated"))
   }
 
+  const handleLaunchScreenStart = () => {
+    // 标记用户已访问过
+    localStorage.setItem("momentum-has-visited", "true")
+    setShowLaunchScreen(false)
+  }
+
   const urgent = useMemo(() => {
     const now = new Date()
     const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
@@ -135,6 +153,11 @@ export default function HomePage() {
     // 仅展示最多 3 条
     return result.slice(0, 3)
   }, [todos])
+
+  // 如果是首次访问，显示启动页
+  if (showLaunchScreen) {
+    return <LaunchScreen onStart={handleLaunchScreenStart} />
+  }
 
   return (
     <div className="min-h-screen bg-momentum-cream pb-16">
