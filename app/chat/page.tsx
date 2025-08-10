@@ -30,7 +30,7 @@ export default function ChatPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const { messages, isLoading, error, sendMessage, stopGeneration, listSessions } = useAiChat()
+  const { messages, isLoading, error, sendMessage, stopGeneration } = useAiChat()
   const [inputValue, setInputValue] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -43,39 +43,32 @@ export default function ChatPage() {
 
   // 首次打开 /chat 时的行为控制：
   // 1) 若来自首页携带 autostart=1&text=...，则立即以该内容开聊（不显示开场白）
-  // 2) 若无 sessionId 且存在历史会话，则跳到最近一次会话 /chat?sessionId=...
-  // 3) 若无任何历史与 autostart，显示开场白气泡
+  // 2) 清理URL参数，保持URL简洁
   useEffect(() => {
     const sp = new URLSearchParams(searchParams?.toString() || "")
-    const sid = sp.get("sessionId")
     const auto = sp.get("autostart")
     const text = sp.get("text")
     const title = sp.get("title") || (text ? text.slice(0, 20) : "")
     const expert = sp.get("expert") === "1"
 
-    // 仅在无现有 sessionId 时处理自动开聊或跳到最近一次会话
-    if (!sid) {
-      if (!startedRef.current && auto === "1" && text) {
-        startedRef.current = true
-        // 发送消息并在完成后更新URL
-        void sendMessage(text, {
-          titleForNewSession: title,
-          hiddenSystem: expert ? EXPERT_SYSTEM : undefined,
-          skipUrlUpdate: true
-        }).then((sessionId) => {
-          // 消息发送完成后，更新URL到新的sessionId
-          if (sessionId) {
-            router.replace(`/chat?sessionId=${encodeURIComponent(sessionId)}`)
-          }
-        })
-        return
-      }
-      const sessions = listSessions()
-      if (sessions.length > 0) {
-        router.replace(`/chat?sessionId=${encodeURIComponent(sessions[0].id)}`)
-      }
+    // 处理autostart
+    if (!startedRef.current && auto === "1" && text) {
+      startedRef.current = true
+      // 立即清理URL参数
+      router.replace("/chat", { scroll: false })
+      // 发送消息
+      void sendMessage(text, {
+        titleForNewSession: title,
+        hiddenSystem: expert ? EXPERT_SYSTEM : undefined,
+      })
+      return
     }
-  }, [searchParams, sendMessage, listSessions, router])
+
+    // 如果URL有参数但不是autostart，清理URL
+    if (sp.toString()) {
+      router.replace("/chat", { scroll: false })
+    }
+  }, [searchParams, sendMessage, router])
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return

@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 
 export type Role = "user" | "assistant"
 
@@ -21,6 +21,7 @@ export interface ChatSession {
 }
 
 const SESSIONS_KEY = "momentum-sessions-v1"
+const CURRENT_SESSION_KEY = "momentum-current-session-v1"
 const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000 // 7 天过期
 
 function now() {
@@ -51,62 +52,86 @@ function makeId() {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
 }
 
+// 当前会话管理
+function getCurrentSessionId(): string | null {
+  try {
+    return localStorage.getItem(CURRENT_SESSION_KEY)
+  } catch {
+    return null
+  }
+}
+
+function setCurrentSessionId(sessionId: string | null) {
+  try {
+    if (sessionId) {
+      localStorage.setItem(CURRENT_SESSION_KEY, sessionId)
+    } else {
+      localStorage.removeItem(CURRENT_SESSION_KEY)
+    }
+  } catch {
+    // ignore
+  }
+}
+
 type SendMessageOptions = {
   titleForNewSession?: string
   hiddenSystem?: string // 隐藏上下文，仅随请求发送，不展示在 UI
-  skipUrlUpdate?: boolean // 跳过URL更新，用于autostart场景
 }
 
 export function useAiChat() {
   const router = useRouter()
-  const searchParams = useSearchParams()
 
-  // 仅用稳定字符串作为依赖，避免 useSearchParams 引用变化导致死循环
-  const sessionIdString = useMemo(() => (searchParams ? searchParams.toString() : ""), [searchParams])
-  const sessionId = useMemo(() => {
-    try {
-      const sp = new URLSearchParams(sessionIdString)
-      return sp.get("sessionId")
-    } catch {
-      return null
-    }
-  }, [sessionIdString])
-
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [currentSessionId, setCurrentSessionIdState] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingTodos, setPendingTodos] = useState<string[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
-  // 初始化：根据 ?sessionId 加载
+  // 包装setCurrentSessionId，同时更新localStorage
+  const updateCurrentSessionId = useCallback((sessionId: string | null) => {
+    setCurrentSessionIdState(sessionId)
+    setCurrentSessionId(sessionId)
+  }, [])
+
+  // 初始化：从localStorage加载当前会话
   useEffect(() => {
     if (typeof window === "undefined") return
 
-    if (!sessionId) {
-      // 无 sessionId 时仅重置状态
-      setCurrentSessionId(null)
-      setMessages([])
+    const savedSessionId = getCurrentSessionId()
+    if (!savedSessionId) {
+      // 无当前会话时，尝试加载最近的会话
+      const sessions = readSessions()
+      if (sessions.length > 0) {
+        const latestSession = sessions[0] // sessions已按updatedAt排序
+        updateCurrentSessionId(latestSession.id)
+        setMessages(latestSession.messages)
+      } else {
+        updateCurrentSessionId(null)
+        setMessages([])
+      }
       return
     }
 
+    // 加载指定会话
     const sessions = readSessions()
-    const s = sessions.find((x) => x.id === sessionId)
+    const session = sessions.find((s) => s.id === savedSessionId)
 
-    if (s) {
-      setCurrentSessionId((prev) => (prev === s.id ? prev : s.id))
-      setMessages((prev) => {
-        const prevLen = prev.length
-        const nextLen = s.messages.length
-        if (prevLen === nextLen && prevLen > 0 && prev[prevLen - 1]?.id === s.messages[nextLen - 1]?.id) {
-          return prev
-        }
-        return s.messages
-      })
+    if (session) {
+      updateCurrentSessionId(session.id)
+      setMessages(session.messages)
     } else {
-      router.replace("/chat")
+      // 会话不存在，清除并加载最新会话
+      const latestSession = sessions[0]
+      if (latestSession) {
+        updateCurrentSessionId(latestSession.id)
+        setMessages(latestSession.messages)
+      } else {
+        updateCurrentSessionId(null)
+        setMessages([])
+      }
     }
-  }, [sessionId, router])
+  }, [updateCurrentSessionId])
 
   // 列出会话
   const listSessions = useCallback((): ChatSession[] => {
@@ -114,9 +139,19 @@ export function useAiChat() {
     return sessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }, [])
 
+  // 切换到指定会话
+  const switchToSession = useCallback((sessionId: string) => {
+    const sessions = readSessions()
+    const session = sessions.find((s) => s.id === sessionId)
+    if (session) {
+      updateCurrentSessionId(sessionId)
+      setMessages(session.messages)
+    }
+  }, [updateCurrentSessionId])
+
   // 新建会话
   const startSession = useCallback(
-    (title?: string, skipUrlUpdate?: boolean) => {
+    (title?: string) => {
       const id = makeId()
       const session: ChatSession = {
         id,
@@ -128,14 +163,11 @@ export function useAiChat() {
       const sessions = readSessions()
       sessions.push(session)
       writeSessions(sessions)
-      setCurrentSessionId(id)
+      updateCurrentSessionId(id)
       setMessages([])
-      if (!skipUrlUpdate) {
-        router.replace(`/chat?sessionId=${encodeURIComponent(id)}`)
-      }
       return id
     },
-    [router],
+    [updateCurrentSessionId],
   )
 
   // 更新会话标题
@@ -157,12 +189,18 @@ export function useAiChat() {
       const sessions = readSessions().filter((s) => s.id !== targetId)
       writeSessions(sessions)
       if (!id || id === currentSessionId) {
-        setCurrentSessionId(null)
-        setMessages([])
-        router.replace("/chat")
+        // 删除当前会话后，尝试加载最新会话
+        if (sessions.length > 0) {
+          const latestSession = sessions.sort((a, b) => b.updatedAt - a.updatedAt)[0]
+          updateCurrentSessionId(latestSession.id)
+          setMessages(latestSession.messages)
+        } else {
+          updateCurrentSessionId(null)
+          setMessages([])
+        }
       }
     },
-    [currentSessionId, router],
+    [currentSessionId, updateCurrentSessionId],
   )
 
   // 清空全部历史
@@ -339,10 +377,7 @@ export function useAiChat() {
       // 若没有会话，创建并命名
       let sid = currentSessionId
       if (!sid) {
-        sid = startSession(
-          options?.titleForNewSession || content.slice(0, 30),
-          options?.skipUrlUpdate
-        )
+        sid = startSession(options?.titleForNewSession || content.slice(0, 30))
       }
 
       setError(null)
@@ -555,6 +590,7 @@ export function useAiChat() {
     clearChat,
     // sessions
     startSession,
+    switchToSession,
     updateSessionTitle,
     listSessions,
     deleteSession,
