@@ -73,7 +73,7 @@ function formatDate(date: Date) {
 export default function HomePage() {
   const [todos, setTodos] = useState<StoredTodo[]>([])
   const [completionStats, setCompletionStats] = useState({ totalCompleted: 0, completedToday: 0, lastCompletionDate: "", streak: 0 })
-  const [showLaunchScreen, setShowLaunchScreen] = useState(false)
+  const [showLaunchScreen, setShowLaunchScreen] = useState<boolean | null>(null) // null表示还在检查
 
   const loadTodos = () => {
     try {
@@ -89,11 +89,10 @@ export default function HomePage() {
   useEffect(() => {
     try {
       const hasVisited = localStorage.getItem("momentum-has-visited")
-      if (!hasVisited) {
-        setShowLaunchScreen(true)
-      }
+      setShowLaunchScreen(!hasVisited)
     } catch {
       // localStorage不可用时，不显示启动页
+      setShowLaunchScreen(false)
     }
   }, [])
 
@@ -154,8 +153,13 @@ export default function HomePage() {
     return result.slice(0, 3)
   }, [todos])
 
+  // 还在检查localStorage时，显示空白页面避免闪烁
+  if (showLaunchScreen === null) {
+    return <div className="min-h-screen bg-momentum-cream" />
+  }
+
   // 如果是首次访问，显示启动页
-  if (showLaunchScreen) {
+  if (showLaunchScreen === true) {
     return <LaunchScreen onStart={handleLaunchScreenStart} />
   }
 
