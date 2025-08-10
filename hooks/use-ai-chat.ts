@@ -363,32 +363,53 @@ export function useAiChat() {
     }
   }, [])
 
+  // 检测是否包含任务拆解（数字列表）
+  const containsTaskBreakdown = useCallback((content: string): boolean => {
+    // 检测是否有数字列表格式的任务拆解
+    const listPatterns = [
+      /^\d+\.\s+.+$/m,  // 1. 任务
+      /^•\s+.+$/m,      // • 任务
+      /^-\s+.+$/m,      // - 任务
+      /^\*\s+.+$/m,     // * 任务
+    ]
+
+    return listPatterns.some(pattern => pattern.test(content))
+  }, [])
+
   // 解析AI回复中的选项标记，生成快捷回复
   const parseQuickReplies = useCallback((content: string): QuickReply[] => {
     // 匹配【选项】格式的文本
     const optionRegex = /【([^】]+)】/g
     const matches = content.match(optionRegex)
 
-    if (!matches || matches.length < 2) {
-      return []
+    if (matches && matches.length >= 2) {
+      // 提取选项文本并生成快捷回复
+      const options = matches.map(match => {
+        const text = match.replace(/【|】/g, '')
+        return {
+          text,
+          action: "select_option"
+        }
+      })
+
+      // 去重
+      const uniqueOptions = options.filter((option, index, self) =>
+        index === self.findIndex(o => o.text === option.text)
+      )
+
+      return uniqueOptions
     }
 
-    // 提取选项文本并生成快捷回复
-    const options = matches.map(match => {
-      const text = match.replace(/【|】/g, '')
-      return {
-        text,
-        action: "select_option"
-      }
-    })
+    // 如果没有明确的选项标记，但包含任务拆解，自动添加确认选项
+    if (containsTaskBreakdown(content)) {
+      return [
+        { text: "好的，加到待办", action: "confirm_todo" },
+        { text: "我再想想", action: "cancel_todo" }
+      ]
+    }
 
-    // 去重
-    const uniqueOptions = options.filter((option, index, self) =>
-      index === self.findIndex(o => o.text === option.text)
-    )
-
-    return uniqueOptions
-  }, [])
+    return []
+  }, [containsTaskBreakdown])
 
   // 处理快捷回复
   const handleQuickReply = useCallback((action: string, text: string) => {
@@ -568,6 +589,16 @@ export function useAiChat() {
           const quickReplies = parseQuickReplies(assistantMsg.content)
           if (quickReplies.length > 0) {
             assistantMsg.quickReplies = quickReplies
+
+            // 如果包含任务拆解确认选项，自动提取任务到pendingTodos
+            const hasConfirmOption = quickReplies.some(reply => reply.action === "confirm_todo")
+            if (hasConfirmOption && containsTaskBreakdown(assistantMsg.content)) {
+              const tasks = extractActionSteps(assistantMsg.content)
+              if (tasks.length > 0) {
+                setPendingTodos(tasks)
+              }
+            }
+
             working = [...nextMessages, { ...assistantMsg }]
             setMessages(working)
             persistMessages(working)
