@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react"
 import AppHeader from "@/components/app-header"
 import BottomNavigation from "@/components/bottom-navigation"
 import { PullToRefresh } from "@/components/mobile-enhancements"
-import { BookOpen, GraduationCap, FileText, BarChart3, MessagesSquare, ListTodo, AlertTriangle } from "lucide-react"
+import { BookOpen, GraduationCap, FileText, BarChart3, MessagesSquare, ListTodo, AlertTriangle, Trophy } from "lucide-react"
+import { getCompletionStats } from "@/lib/celebration"
 
 type StoredTodo = {
   id: string
@@ -70,6 +71,7 @@ function formatDate(date: Date) {
 
 export default function HomePage() {
   const [todos, setTodos] = useState<StoredTodo[]>([])
+  const [completionStats, setCompletionStats] = useState({ totalCompleted: 0, completedToday: 0, lastCompletionDate: "", streak: 0 })
 
   const loadTodos = () => {
     try {
@@ -81,9 +83,11 @@ export default function HomePage() {
     }
   }
 
-  // 读取本地待办
+  // 读取本地待办和完成统计
   useEffect(() => {
     loadTodos()
+    setCompletionStats(getCompletionStats())
+
     const onStorage = (e: StorageEvent) => {
       // 接收待办页的自定义通知
       if (e.key === "momentum-todos") {
@@ -104,6 +108,7 @@ export default function HomePage() {
     // 模拟刷新延迟
     await new Promise(resolve => setTimeout(resolve, 1000))
     loadTodos()
+    setCompletionStats(getCompletionStats())
     // 触发自定义事件通知其他组件更新
     window.dispatchEvent(new CustomEvent("todos:updated"))
   }
@@ -191,6 +196,24 @@ export default function HomePage() {
            <p className="text-momentum-muted max-w-md mx-auto leading-relaxed text-sm">
             说说你遇到的困难，我会帮你分析原因并陪你行动。
           </p>
+
+          {/* 完成统计 */}
+          {completionStats.totalCompleted > 0 && (
+            <div className="mt-4 p-4 bg-gradient-to-r from-momentum-sage/10 to-momentum-coral/10 rounded-lg border border-momentum-sage/20">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Trophy className="w-5 h-5 text-momentum-coral" />
+                <span className="text-lg font-semibold text-momentum-forest">
+                  已完成 {completionStats.totalCompleted} 个任务
+                </span>
+              </div>
+              <div className="flex justify-center gap-4 text-sm text-momentum-muted">
+                <span>今日完成: {completionStats.completedToday}</span>
+                {completionStats.streak > 1 && (
+                  <span>连续 {completionStats.streak} 天</span>
+                )}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* 常见拖延问题（品牌配色） */}

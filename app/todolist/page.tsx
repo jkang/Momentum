@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trash2, Plus } from "lucide-react"
 import BottomNavigation from "@/components/bottom-navigation"
+import { recordTaskCompletion } from "@/lib/celebration"
 
 type Todo = {
   id: string
@@ -20,7 +21,7 @@ type Todo = {
   updatedAt: string
 }
 
-const STORAGE_KEY = "todos"
+const STORAGE_KEY = "momentum-todos"
 
 function loadTodos(): Todo[] {
   if (typeof window === "undefined") return []
@@ -85,6 +86,7 @@ export default function TodoListPage() {
   const [newTitle, setNewTitle] = useState("")
   const [newDesc, setNewDesc] = useState("")
   const [newDeadline, setNewDeadline] = useState<string>("")
+  const [celebrationMessage, setCelebrationMessage] = useState<string | null>(null)
 
   // 首次加载
   useEffect(() => {
@@ -128,6 +130,17 @@ export default function TodoListPage() {
     const next = todos.map((t) => (t.id === id ? { ...t, completed: checked, updatedAt: new Date().toISOString() } : t))
     setTodos(next)
     saveTodos(next)
+
+    // 如果是完成任务（从未完成变为完成），显示庆祝消息
+    if (checked) {
+      const celebration = recordTaskCompletion()
+      setCelebrationMessage(celebration)
+
+      // 3秒后自动隐藏庆祝消息
+      setTimeout(() => {
+        setCelebrationMessage(null)
+      }, 3000)
+    }
   }
 
   function removeCompleted() {
@@ -150,6 +163,13 @@ export default function TodoListPage() {
   return (
     <div className="min-h-screen bg-momentum-cream">
       <main className="mx-auto max-w-3xl px-4 py-6 mobile-nav-spacing mobile-spacing">
+        {/* 庆祝消息 */}
+        {celebrationMessage && (
+          <div className="mb-4 p-4 bg-gradient-to-r from-momentum-coral/10 to-momentum-sage/10 border border-momentum-coral/30 rounded-lg text-center animate-bounce">
+            <p className="text-momentum-forest font-medium">{celebrationMessage}</p>
+          </div>
+        )}
+
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-momentum-forest">待办清单</h1>
           <div className="flex items-center gap-2 flex-wrap">
