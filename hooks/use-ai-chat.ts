@@ -188,12 +188,30 @@ export function useAiChat() {
   // 提取行动步骤（最多 6）
   const extractActionSteps = useCallback((text: string): string[] => {
     const items: string[] = []
+
+    // 匹配数字列表格式的行动步骤
     const numbered = text.match(/^\d+\.\s*(.+)$/gm)
-    if (numbered) items.push(...numbered.map((m) => m.replace(/^\d+\.\s*/, "")))
+    if (numbered) {
+      items.push(...numbered.map((m) => m.replace(/^\d+\.\s*/, "")).filter(item => {
+        // 过滤掉分析性文字，只保留行动性内容
+        const actionKeywords = ['开始', '制定', '设置', '完成', '练习', '尝试', '联系', '准备', '安排', '执行', '写', '做', '学习', '阅读']
+        const analysisKeywords = ['因为', '所以', '可能', '通常', '一般来说', '建议', '重要的是', '需要注意']
+
+        const hasActionKeyword = actionKeywords.some(keyword => item.includes(keyword))
+        const hasAnalysisKeyword = analysisKeywords.some(keyword => item.includes(keyword))
+
+        return hasActionKeyword && !hasAnalysisKeyword && item.length > 5 && item.length < 50
+      }))
+    }
+
     const bullets = text.match(/^[-•]\s*(.+)$/gm)
-    if (bullets) items.push(...bullets.map((m) => m.replace(/^[-•]\s*/, "")))
-    const steps = text.match(/步骤\d+[:：]\s*(.+)/g)
-    if (steps) items.push(...steps.map((m) => m.replace(/步骤\d+[:：]\s*/, "")))
+    if (bullets) {
+      items.push(...bullets.map((m) => m.replace(/^[-•]\s*/, "")).filter(item => {
+        const actionKeywords = ['开始', '制定', '设置', '完成', '练习', '尝试', '联系', '准备', '安排', '执行', '写', '做', '学习', '阅读']
+        return actionKeywords.some(keyword => item.includes(keyword)) && item.length > 5 && item.length < 50
+      }))
+    }
+
     return items.filter((x) => x.trim()).slice(0, 6)
   }, [])
 
@@ -260,17 +278,15 @@ export function useAiChat() {
       persistMessages(nextMessages)
 
       const tutorialHit = detectTutorialIntent(content)
-      let baseMessages = nextMessages
+      let tutorialPrompt = ""
       if (tutorialHit) {
-        const linkMsg: ChatMessage = {
-          id: makeId(),
-          role: "assistant",
-          content: `📘 教程推荐： [${tutorialHit.title}](/tutorials/${tutorialHit.slug})\n\n提示：阅读后我可以根据教程为你拆出最多 6 条学习行动项，随时对我说“帮我加到待办”。`,
-          timestamp: now(),
-        }
-        baseMessages = [...nextMessages, linkMsg]
-        setMessages(baseMessages)
-        persistMessages(baseMessages)
+        // const linkMsg: ChatMessage = {
+        //   id: makeId(),
+        //   role: "assistant",
+        //   content: `📘 教程推荐： [${tutorialHit.title}](/tutorials/${tutorialHit.slug})\n\n提示：阅读后我可以根据教程为你拆出最多 6 条学习行动项，随时对我说“帮我加到待办”。`,
+        //   timestamp: now(),
+        // }
+        tutorialPrompt = `\n\n另外，我发现有个相关教程可能对你有帮助：📘 [${tutorialHit.title}](/tutorials/${tutorialHit.slug})。如果需要，我可以根据教程为你拆解学习行动项。`
       }
 
       const wantAddTodo = detectAddTodo(content)
@@ -283,6 +299,11 @@ export function useAiChat() {
           ...(options?.hiddenSystem ? [{ role: "system", content: options.hiddenSystem }] : []),
           ...nextMessages.map((m) => ({ role: m.role, content: m.content })),
         ]
+
+        // 如果有教程推荐，添加到系统提示中
+        if (tutorialPrompt) {
+          apiMessages.push({ role: "system", content: `请在回复末尾添加这个教程推荐：${tutorialPrompt}` })
+        }
 
         const response = await fetch("/api/chat/stream", {
           method: "POST",
@@ -303,8 +324,8 @@ export function useAiChat() {
           timestamp: now(),
         }
 
-        // 关键修复：以 baseMessages（可能包含教程链接）为起点
-        let working = [...baseMessages, assistantMsg]
+        // 关键修复：以 nextMessages 为起点
+        let working = [...nextMessages, assistantMsg]
         setMessages(working)
 
         const decoder = new TextDecoder()
@@ -324,7 +345,7 @@ export function useAiChat() {
                 const parsed = JSON.parse(data)
                 if (parsed.content) {
                   assistantMsg.content += parsed.content
-                  working = [...baseMessages, { ...assistantMsg }]
+                  working = [...nextMessages, { ...assistantMsg }]
                   setMessages(working)
                   persistMessages(working)
                 }

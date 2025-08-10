@@ -122,7 +122,7 @@ export default function ChatPage() {
                   }`}
                 >
                   <div
-                    className={m.role === "user" ? "text-sm leading-relaxed text-white" : "prose prose-sm max-w-none"}
+                    className={m.role === "user" ? "text-sm leading-relaxed text-white" : "prose prose-xs max-w-none text-sm"}
                   >
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
