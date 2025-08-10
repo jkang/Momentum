@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trash2, Plus } from "lucide-react"
+import BottomNavigation from "@/components/bottom-navigation"
 
 type Todo = {
   id: string
