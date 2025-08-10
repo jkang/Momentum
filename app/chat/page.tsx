@@ -57,7 +57,17 @@ export default function ChatPage() {
     if (!sid) {
       if (!startedRef.current && auto === "1" && text) {
         startedRef.current = true
-        void sendMessage(text, { titleForNewSession: title, hiddenSystem: expert ? EXPERT_SYSTEM : undefined })
+        // 发送消息并在完成后更新URL
+        void sendMessage(text, {
+          titleForNewSession: title,
+          hiddenSystem: expert ? EXPERT_SYSTEM : undefined,
+          skipUrlUpdate: true
+        }).then((sessionId) => {
+          // 消息发送完成后，更新URL到新的sessionId
+          if (sessionId) {
+            router.replace(`/chat?sessionId=${encodeURIComponent(sessionId)}`)
+          }
+        })
         return
       }
       const sessions = listSessions()
@@ -133,7 +143,7 @@ export default function ChatPage() {
                             {children}
                           </a>
                         ),
-                        code: ({ inline, children }) =>
+                        code: ({ inline, children }: any) =>
                           inline ? (
                             <code
                               className={
@@ -198,7 +208,7 @@ export default function ChatPage() {
                     <span className="text-momentum-muted text-sm">小M正在思考...</span>
                     <Button
                       variant="outline"
-                      size="xs"
+                      size="sm"
                       onClick={stopGeneration}
                       className="h-7 px-2 bg-transparent text-momentum-sage hover:text-momentum-forest"
                     >
@@ -237,7 +247,7 @@ export default function ChatPage() {
                   }}
                   placeholder="描述你遇到的拖延问题..."
                   disabled={isLoading}
-                  className="resize-none border-momentum-sage-light-20 focus:border-momentum-sage focus:ring-momentum-sage/20 min-h-[44px] text-base"
+                  className="resize-none border-momentum-sage-light-20 focus:border-momentum-sage focus:ring-momentum-sage/20 min-h-[44px] text-sm"
                 />
               </div>
               {isLoading ? (
@@ -254,9 +264,6 @@ export default function ChatPage() {
                   <Send className="w-4 h-4" />
                 </Button>
               )}
-            </div>
-            <div className="mt-2 text-[11px] text-momentum-muted text-center">
-              提示：当小M给出行动步骤后，说“帮我加到待办”即可保存至清单
             </div>
           </div>
         </div>

@@ -54,6 +54,7 @@ function makeId() {
 type SendMessageOptions = {
   titleForNewSession?: string
   hiddenSystem?: string // 隐藏上下文，仅随请求发送，不展示在 UI
+  skipUrlUpdate?: boolean // 跳过URL更新，用于autostart场景
 }
 
 export function useAiChat() {
@@ -114,7 +115,7 @@ export function useAiChat() {
 
   // 新建会话
   const startSession = useCallback(
-    (title?: string) => {
+    (title?: string, skipUrlUpdate?: boolean) => {
       const id = makeId()
       const session: ChatSession = {
         id,
@@ -128,7 +129,9 @@ export function useAiChat() {
       writeSessions(sessions)
       setCurrentSessionId(id)
       setMessages([])
-      router.replace(`/chat?sessionId=${encodeURIComponent(id)}`)
+      if (!skipUrlUpdate) {
+        router.replace(`/chat?sessionId=${encodeURIComponent(id)}`)
+      }
       return id
     },
     [router],
@@ -255,13 +258,16 @@ export function useAiChat() {
 
   // 发送消息（支持隐藏 system 上下文）
   const sendMessage = useCallback(
-    async (content: string, options?: SendMessageOptions) => {
+    async (content: string, options?: SendMessageOptions): Promise<string | undefined> => {
       if (!content.trim() || isLoading) return
 
       // 若没有会话，创建并命名
       let sid = currentSessionId
       if (!sid) {
-        sid = startSession(options?.titleForNewSession || content.slice(0, 30))
+        sid = startSession(
+          options?.titleForNewSession || content.slice(0, 30),
+          options?.skipUrlUpdate
+        )
       }
 
       setError(null)
@@ -378,6 +384,8 @@ export function useAiChat() {
         setIsLoading(false)
         abortRef.current = null
       }
+
+      return sid
     },
     [
       isLoading,
