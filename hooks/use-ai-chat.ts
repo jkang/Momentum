@@ -392,10 +392,10 @@ export function useAiChat() {
         }
       })
 
-      // 去重
+      // 去重并限制为最多3个选项
       const uniqueOptions = options.filter((option, index, self) =>
         index === self.findIndex(o => o.text === option.text)
-      )
+      ).slice(0, 3)
 
       return uniqueOptions
     }
@@ -416,7 +416,7 @@ export function useAiChat() {
     if (action === "select_option") {
       // 处理选项选择
       void sendMessage(text)
-    } else if (action === "confirm_todo" && pendingTodos.length > 0) {
+    } else if (action === "confirm_todo") {
       // 添加用户消息
       const userMsg: ChatMessage = {
         id: makeId(),
@@ -425,24 +425,47 @@ export function useAiChat() {
         timestamp: now(),
       }
 
-      // 添加待办项
-      const added = addTodos(pendingTodos)
-      setPendingTodos([])
-
-      // 添加确认消息
-      const confirmMsg: ChatMessage = {
-        id: makeId(),
-        role: "assistant",
-        content: `✅ 已添加 ${added} 个行动项到待办清单！\n\n3秒后跳转到待办页查看。`,
-        timestamp: now(),
+      // 获取待办项：优先使用pendingTodos，如果为空则从最近的AI回复中提取
+      let todosToAdd = pendingTodos
+      if (todosToAdd.length === 0) {
+        const lastAiMessage = [...messages].reverse().find((m) => m.role === "assistant")
+        if (lastAiMessage) {
+          todosToAdd = extractActionSteps(lastAiMessage.content)
+        }
       }
 
-      const newMessages = [...messages, userMsg, confirmMsg]
-      setMessages(newMessages)
-      persistMessages(newMessages)
+      if (todosToAdd.length > 0) {
+        // 添加待办项
+        const added = addTodos(todosToAdd)
+        setPendingTodos([])
 
-      // 跳转到待办页面
-      setTimeout(() => router.push("/todolist"), 3000)
+        // 添加确认消息
+        const confirmMsg: ChatMessage = {
+          id: makeId(),
+          role: "assistant",
+          content: `✅ 已添加 ${added} 个行动项到待办清单！\n\n3秒后跳转到待办页查看。`,
+          timestamp: now(),
+        }
+
+        const newMessages = [...messages, userMsg, confirmMsg]
+        setMessages(newMessages)
+        persistMessages(newMessages)
+
+        // 跳转到待办页面
+        setTimeout(() => router.push("/todolist"), 3000)
+      } else {
+        // 没有找到可添加的任务
+        const noTasksMsg: ChatMessage = {
+          id: makeId(),
+          role: "assistant",
+          content: "抱歉，我没有找到可以添加到待办的具体任务。请告诉我你想要添加哪些具体的行动项。",
+          timestamp: now(),
+        }
+
+        const newMessages = [...messages, userMsg, noTasksMsg]
+        setMessages(newMessages)
+        persistMessages(newMessages)
+      }
     } else if (action === "cancel_todo") {
       // 添加用户消息
       const userMsg: ChatMessage = {
