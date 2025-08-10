@@ -7,6 +7,7 @@ import BottomNavigation from "@/components/bottom-navigation"
 import { PullToRefresh } from "@/components/mobile-enhancements"
 import { BookOpen, GraduationCap, FileText, BarChart3, MessagesSquare, ListTodo, AlertTriangle, Trophy } from "lucide-react"
 import { getCompletionStats } from "@/lib/celebration"
+import LaunchScreen from "@/components/launch-screen"
 
 type StoredTodo = {
   id: string
@@ -72,6 +73,7 @@ function formatDate(date: Date) {
 export default function HomePage() {
   const [todos, setTodos] = useState<StoredTodo[]>([])
   const [completionStats, setCompletionStats] = useState({ totalCompleted: 0, completedToday: 0, lastCompletionDate: "", streak: 0 })
+  const [showLaunchScreen, setShowLaunchScreen] = useState(false)
 
   const loadTodos = () => {
     try {
