@@ -42,7 +42,7 @@ export default function BottomNavigation() {
       <div
         className="max-w-4xl mx-auto flex justify-around items-center px-4 pt-2"
         style={{
-          paddingBottom: `calc(12px + var(--safe-area-inset-bottom))`
+          paddingBottom: `calc(6px + var(--safe-area-inset-bottom))`
         }}
       >
         {items.map((item) => {

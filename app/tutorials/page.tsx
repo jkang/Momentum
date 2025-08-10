@@ -69,20 +69,20 @@ export default function TutorialsPage() {
     <div className="min-h-screen bg-momentum-cream">
       {/* 页面头部 */}
       <div className="bg-white border-b border-momentum-sage-light/30">
-        <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
+        <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-momentum-coral" />
-              <h1 className="text-2xl md:text-3xl font-bold text-momentum-forest">教程中心</h1>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <BookOpen className="h-5 w-5 text-momentum-coral" />
+              <h1 className="text-lg font-semibold text-momentum-forest">教程中心</h1>
             </div>
-            <p className="text-base md:text-lg text-momentum-sage-dark max-w-2xl mx-auto leading-relaxed">
-              精选实用教程，助你快速掌握现代开发技能。从基础到进阶，循序渐进提升能力。
+            <p className="text-sm text-momentum-muted max-w-md mx-auto leading-relaxed">
+              精选实用教程，助你快速掌握现代开发技能
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {/* 教程网格 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {TUTORIALS.map((tutorial) => {
@@ -99,7 +99,7 @@ export default function TutorialsPage() {
                         <Icon className="h-5 w-5 md:h-6 md:w-6" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <CardTitle className="text-lg md:text-xl text-momentum-forest group-hover:text-momentum-coral transition-colors leading-tight">
+                        <CardTitle className="text-base font-medium text-momentum-forest group-hover:text-momentum-coral transition-colors leading-tight">
                           {tutorial.title}
                         </CardTitle>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -109,7 +109,7 @@ export default function TutorialsPage() {
                           >
                             {tutorial.difficulty}
                           </Badge>
-                          <div className="flex items-center gap-1 text-xs md:text-sm text-momentum-sage-dark">
+                          <div className="flex items-center gap-1 text-xs text-momentum-muted">
                             <Clock className="h-3 w-3" />
                             {tutorial.duration}
                           </div>
@@ -119,12 +119,12 @@ export default function TutorialsPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-4 md:p-6">
-                  <p className="text-sm md:text-base text-momentum-sage-dark mb-4 leading-relaxed">
+                <CardContent className="p-4">
+                  <p className="text-sm text-momentum-muted mb-3 leading-relaxed">
                     {tutorial.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-1.5 md:gap-2 mb-4">
+                  <div className="flex flex-wrap gap-1.5 mb-3">
                     {tutorial.tags.map((tag) => (
                       <Badge key={tag} variant="outline" className="text-xs border-momentum-sage-light text-momentum-sage-dark">
                         {tag}
@@ -132,14 +132,14 @@ export default function TutorialsPage() {
                     ))}
                   </div>
 
-                  <div className="mb-4 md:mb-6">
+                  <div className="mb-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Target className="h-4 w-4 text-momentum-coral" />
-                      <span className="font-medium text-momentum-forest text-sm">学习目标</span>
+                      <Target className="h-3 w-3 text-momentum-coral" />
+                      <span className="font-medium text-momentum-forest text-xs">学习目标</span>
                     </div>
                     <ul className="space-y-1">
                       {tutorial.objectives.map((objective, index) => (
-                        <li key={index} className="text-xs md:text-sm text-momentum-sage-dark flex items-center gap-2">
+                        <li key={index} className="text-xs text-momentum-muted flex items-center gap-2">
                           <span className="w-1 h-1 bg-momentum-coral rounded-full flex-shrink-0"></span>
                           <span className="leading-relaxed">{objective}</span>
                         </li>
@@ -148,7 +148,7 @@ export default function TutorialsPage() {
                   </div>
 
                   <Link href={`/tutorials/${tutorial.slug}`}>
-                    <Button className="w-full bg-momentum-coral hover:bg-momentum-coral-dark text-white group text-sm md:text-base">
+                    <Button className="w-full bg-momentum-coral hover:bg-momentum-coral-dark text-white group text-sm">
                       开始学习
                       <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
@@ -160,25 +160,25 @@ export default function TutorialsPage() {
         </div>
 
         {/* 底部提示 */}
-        <Card className="mt-8 md:mt-12 border-momentum-coral/30 bg-gradient-to-r from-momentum-coral/5 to-momentum-sage-light/5">
-          <CardContent className="p-6 md:p-8 text-center">
-            <h3 className="text-xl md:text-2xl font-semibold text-momentum-forest mb-4">
+        <Card className="mt-6 border-momentum-coral/30 bg-gradient-to-r from-momentum-coral/5 to-momentum-sage-light/5">
+          <CardContent className="p-4 text-center">
+            <h3 className="text-base font-medium text-momentum-forest mb-3">
               学习路径建议
             </h3>
-            <div className="max-w-3xl mx-auto">
-              <p className="text-sm md:text-base text-momentum-sage-dark mb-6 leading-relaxed">
+            <div className="max-w-2xl mx-auto">
+              <p className="text-sm text-momentum-muted mb-4 leading-relaxed">
                 建议按照 <strong>GitHub → Cursor → v0 → Vercel</strong> 的顺序学习，
-                这样可以建立完整的现代开发工作流：版本控制 → AI 编程 → 快速开发 → 部署上线。
+                建立完整的现代开发工作流。
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
                 <Link href="/chat">
-                  <Button className="bg-momentum-coral hover:bg-momentum-coral-dark text-white text-sm md:text-base">
+                  <Button className="bg-momentum-coral hover:bg-momentum-coral-dark text-white text-sm">
                     <BookOpen className="h-4 w-4 mr-2" />
                     与小M讨论学习计划
                   </Button>
                 </Link>
                 <Link href="/">
-                  <Button variant="outline" className="border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10 text-sm md:text-base">
+                  <Button variant="outline" className="border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10 text-sm">
                     返回首页
                   </Button>
                 </Link>

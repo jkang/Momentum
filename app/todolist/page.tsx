@@ -147,171 +147,193 @@ export default function TodoListPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6 mobile-nav-spacing mobile-spacing">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-sm font-semibold text-sage-dark">待办清单</h1>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            className="h-9 px-3 text-sm touch-feedback"
-            onClick={() => setShowForm((v) => !v)}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            添加待办
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="h-9 px-3 text-sm touch-feedback"
-            onClick={removeCompleted}
-            disabled={done.length === 0}
-          >
-            清除已完成
-          </Button>
+    <div className="min-h-screen bg-momentum-cream">
+      <main className="mx-auto max-w-3xl px-4 py-6 mobile-nav-spacing mobile-spacing">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-momentum-forest">待办清单</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              className="h-9 px-3 text-sm touch-feedback bg-momentum-coral hover:bg-momentum-coral-dark text-white"
+              onClick={() => setShowForm((v) => !v)}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              添加待办
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 px-3 text-sm touch-feedback border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10"
+              onClick={removeCompleted}
+              disabled={done.length === 0}
+            >
+              清除已完成
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {showForm && (
-        <Card className="mb-4">
-          <CardHeader className="py-3">
-            <CardTitle className="text-xs font-medium text-soft-gray">新增待办</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid gap-2">
-              <label className="text-xs text-soft-gray">标题</label>
-              <Input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="例如：写 README"
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="grid gap-2">
-              <label className="text-xs text-soft-gray">描述（可选）</label>
-              <Textarea
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="补充细节"
-                className="min-h-[72px] text-sm"
-              />
-            </div>
-            <div className="grid gap-2">
-              <label className="text-xs text-soft-gray">截止日期（可选）</label>
-              <Input
-                type="date"
-                value={newDeadline}
-                onChange={(e) => setNewDeadline(e.target.value)}
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="secondary" size="sm" className="h-7 px-3 text-xs" onClick={() => setShowForm(false)}>
-                取消
-              </Button>
-              <Button size="sm" className="h-7 px-3 text-xs" onClick={addTodo} disabled={!newTitle.trim()}>
-                保存
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {showForm && (
+          <Card className="mb-6 border-momentum-sage-light/30 bg-white">
+            <CardHeader className="py-4 border-b border-momentum-sage-light/20">
+              <CardTitle className="text-sm font-medium text-momentum-forest">新增待办</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <div className="grid gap-2">
+                <label className="text-sm text-momentum-sage-dark">标题</label>
+                <Input
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="例如：写 README"
+                  className="h-10 text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm text-momentum-sage-dark">描述（可选）</label>
+                <Textarea
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder="补充细节"
+                  className="min-h-[80px] text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm text-momentum-sage-dark">截止日期（可选）</label>
+                <Input
+                  type="date"
+                  value={newDeadline}
+                  onChange={(e) => setNewDeadline(e.target.value)}
+                  className="h-10 text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-sm border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10"
+                  onClick={() => setShowForm(false)}
+                >
+                  取消
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 px-3 text-sm bg-momentum-coral hover:bg-momentum-coral-dark text-white"
+                  onClick={addTodo}
+                  disabled={!newTitle.trim()}
+                >
+                  保存
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      <section className="space-y-6">
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-sage-dark">待完成（{pending.length}）</h2>
-          <ul className="space-y-3">
-            {pending.map((t) => (
-              <li key={t.id} className="rounded-lg border border-light-gray bg-white p-4 shadow-gentle mobile-card touch-feedback">
-                <div className="flex items-start justify-between gap-3">
-                  <label className="flex flex-1 cursor-pointer items-start gap-3">
-                    <Checkbox
-                      checked={t.completed}
-                      onCheckedChange={(v) => toggleTodo(t.id, Boolean(v))}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="text-[15px] font-medium text-gray-700">{t.title}</div>
-                      {shouldShowDescription(t.title, t.description) && (
-                        <div className="mt-1 text-sm text-gray-500">{t.description}</div>
-                      )}
-                      {(t.deadlineDate || t.note) && (
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          {t.deadlineDate && (
-                            <span className="rounded bg-sage-light px-2 py-0.5 text-[11px] text-sage-dark">
+        <section className="space-y-6">
+          <div>
+            <h2 className="mb-4 text-base font-semibold text-momentum-forest">待完成（{pending.length}）</h2>
+            <ul className="space-y-3">
+              {pending.map((t) => (
+                <li key={t.id} className="rounded-lg border border-momentum-sage-light/30 bg-white p-4 shadow-sm mobile-card touch-feedback hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between gap-3">
+                    <label className="flex flex-1 cursor-pointer items-start gap-3">
+                      <Checkbox
+                        checked={t.completed}
+                        onCheckedChange={(v) => toggleTodo(t.id, Boolean(v))}
+                        className="mt-0.5 border-momentum-sage-light data-[state=checked]:bg-momentum-coral data-[state=checked]:border-momentum-coral"
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-momentum-forest">{t.title}</div>
+                        {shouldShowDescription(t.title, t.description) && (
+                          <div className="mt-1 text-sm text-momentum-sage-dark">{t.description}</div>
+                        )}
+                        {(t.deadlineDate || t.note) && (
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            {t.deadlineDate && (
+                              <span className="rounded-full bg-momentum-sage-light/20 px-2 py-1 text-xs text-momentum-sage-dark">
+                                截止：{t.deadlineDate}
+                              </span>
+                            )}
+                            {t.note && (
+                              <span className="rounded-full bg-momentum-coral/10 px-2 py-1 text-xs text-momentum-coral">
+                                {t.note}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-momentum-sage-dark hover:text-momentum-forest hover:bg-momentum-sage-light/10"
+                      onClick={() => removeOne(t.id)}
+                      aria-label="删除"
+                      title="删除"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">删除</span>
+                    </Button>
+                  </div>
+                </li>
+              ))}
+              {pending.length === 0 && (
+                <li className="text-center py-8 text-sm text-momentum-muted">
+                  暂无待完成任务
+                </li>
+              )}
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="mb-4 text-base font-semibold text-momentum-forest">已完成（{done.length}）</h2>
+            <ul className="space-y-3">
+              {done.map((t) => (
+                <li key={t.id} className="rounded-lg border border-momentum-sage-light/30 bg-white p-4 opacity-60">
+                  <div className="flex items-start justify-between gap-3">
+                    <label className="flex flex-1 cursor-pointer items-start gap-3">
+                      <Checkbox
+                        checked={t.completed}
+                        onCheckedChange={(v) => toggleTodo(t.id, Boolean(v))}
+                        className="mt-0.5 border-momentum-sage-light data-[state=checked]:bg-momentum-coral data-[state=checked]:border-momentum-coral"
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium line-through text-momentum-sage-dark">{t.title}</div>
+                        {shouldShowDescription(t.title, t.description) && (
+                          <div className="mt-1 text-sm line-through text-momentum-muted">{t.description}</div>
+                        )}
+                        {t.deadlineDate && (
+                          <div className="mt-2">
+                            <span className="rounded-full bg-momentum-sage-light/20 px-2 py-1 text-xs text-momentum-sage-dark line-through">
                               截止：{t.deadlineDate}
                             </span>
-                          )}
-                          {t.note && (
-                            <span className="rounded bg-[#eff6ff] px-2 py-0.5 text-[11px] text-[#1e40af]">
-                              {t.note}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
-                    onClick={() => removeOne(t.id)}
-                    aria-label="删除"
-                    title="删除"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span className="sr-only">删除</span>
-                  </Button>
-                </div>
-              </li>
-            ))}
-            {pending.length === 0 && <li className="text-center text-xs text-gray-500">暂无待完成任务</li>}
-          </ul>
-        </div>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-momentum-sage-dark hover:text-momentum-forest hover:bg-momentum-sage-light/10"
+                      onClick={() => removeOne(t.id)}
+                      aria-label="删除"
+                      title="删除"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">删除</span>
+                    </Button>
+                  </div>
+                </li>
+              ))}
+              {done.length === 0 && (
+                <li className="text-center py-8 text-sm text-momentum-muted">
+                  暂无已完成任务
+                </li>
+              )}
+            </ul>
+          </div>
+        </section>
 
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-sage-dark">已完成（{done.length}）</h2>
-          <ul className="space-y-3">
-            {done.map((t) => (
-              <li key={t.id} className="rounded-lg border border-light-gray bg-white p-3 opacity-70">
-                <div className="flex items-start justify-between gap-3">
-                  <label className="flex flex-1 cursor-pointer items-start gap-3">
-                    <Checkbox
-                      checked={t.completed}
-                      onCheckedChange={(v) => toggleTodo(t.id, Boolean(v))}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="text-[15px] font-medium line-through">{t.title}</div>
-                      {shouldShowDescription(t.title, t.description) && (
-                        <div className="mt-1 text-sm line-through">{t.description}</div>
-                      )}
-                      {t.deadlineDate && (
-                        <div className="mt-1">
-                          <span className="rounded bg-sage-light px-2 py-0.5 text-[11px] text-sage-dark">
-                            截止：{t.deadlineDate}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
-                    onClick={() => removeOne(t.id)}
-                    aria-label="删除"
-                    title="删除"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span className="sr-only">删除</span>
-                  </Button>
-                </div>
-              </li>
-            ))}
-            {done.length === 0 && <li className="text-center text-xs text-gray-400">暂无已完成任务</li>}
-          </ul>
-        </div>
-      </section>
-    </main>
+        <BottomNavigation />
+      </main>
+    </div>
   )
 }

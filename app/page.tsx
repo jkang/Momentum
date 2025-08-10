@@ -195,7 +195,7 @@ export default function HomePage() {
 
         {/* 常见拖延问题（品牌配色） */}
         <section className="space-y-4">
-          <h3 className="text-lg font-medium text-momentum-forest text-center">常见拖延问题，点击快速开始：</h3>
+          <h3 className="text-lg font-medium text-momentum-forest text-center">你遇到了什么拖延问题呢？</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {QUICK_QUESTIONS.map((q) => {
               const Icon = q.icon

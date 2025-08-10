@@ -257,10 +257,10 @@ export default function TutorialPage() {
             <CardContent className="p-4 md:p-6">
               <div className="flex flex-col lg:flex-row lg:items-start gap-4 md:gap-6">
                 <div className="flex-1">
-                  <h1 className="text-2xl md:text-3xl font-bold text-momentum-forest mb-3">
+                  <h1 className="text-lg font-semibold text-momentum-forest mb-3">
                     {meta.title}
                   </h1>
-                  <p className="text-base md:text-lg text-momentum-sage-dark mb-4 leading-relaxed">
+                  <p className="text-sm text-momentum-muted mb-4 leading-relaxed">
                     {meta.description}
                   </p>
 
@@ -277,31 +277,31 @@ export default function TutorialPage() {
                   <Card className="bg-white/80 backdrop-blur-sm border-momentum-sage-light/30">
                     <CardContent className="p-4 space-y-4">
                       <div className="flex items-center gap-3">
-                        <Clock className="h-4 w-4 md:h-5 md:w-5 text-momentum-coral" />
+                        <Clock className="h-4 w-4 text-momentum-coral" />
                         <div>
-                          <div className="font-medium text-momentum-forest text-sm md:text-base">预计时长</div>
-                          <div className="text-xs md:text-sm text-momentum-sage-dark">{meta.duration}</div>
+                          <div className="font-medium text-momentum-forest text-sm">预计时长</div>
+                          <div className="text-xs text-momentum-muted">{meta.duration}</div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <Target className="h-4 w-4 md:h-5 md:w-5 text-momentum-coral" />
+                        <Target className="h-4 w-4 text-momentum-coral" />
                         <div>
-                          <div className="font-medium text-momentum-forest text-sm md:text-base">难度等级</div>
-                          <div className="text-xs md:text-sm text-momentum-sage-dark">{meta.difficulty}</div>
+                          <div className="font-medium text-momentum-forest text-sm">难度等级</div>
+                          <div className="text-xs text-momentum-muted">{meta.difficulty}</div>
                         </div>
                       </div>
 
                       <Separator />
 
                       <div>
-                        <div className="font-medium text-momentum-forest mb-2 flex items-center gap-2 text-sm md:text-base">
+                        <div className="font-medium text-momentum-forest mb-2 flex items-center gap-2 text-sm">
                           <CheckCircle2 className="h-4 w-4 text-momentum-coral" />
                           学习目标
                         </div>
                         <ul className="space-y-1">
                           {meta.objectives.map((objective, index) => (
-                            <li key={index} className="text-xs md:text-sm text-momentum-sage-dark flex items-center gap-2">
+                            <li key={index} className="text-xs text-momentum-muted flex items-center gap-2">
                               <span className="w-1.5 h-1.5 bg-momentum-coral rounded-full flex-shrink-0"></span>
                               {objective}
                             </li>
@@ -331,18 +331,18 @@ export default function TutorialPage() {
         </Card>
 
         {/* 底部行动区域 */}
-        <Card className="mt-8 border-momentum-coral/30 bg-gradient-to-r from-momentum-coral/5 to-momentum-sage-light/5">
-          <CardContent className="p-6 text-center">
-            <h3 className="text-xl font-semibold text-momentum-forest mb-3">
+        <Card className="mt-6 border-momentum-coral/30 bg-gradient-to-r from-momentum-coral/5 to-momentum-sage-light/5">
+          <CardContent className="p-4 text-center">
+            <h3 className="text-base font-medium text-momentum-forest mb-3">
               学完了？来实践一下！
             </h3>
-            <p className="text-momentum-sage-dark mb-4">
+            <p className="text-sm text-momentum-muted mb-4">
               回到聊天页面，对小M说"帮我加到待办"，我会为你生成具体的练习步骤。
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Button
                 onClick={() => router.push('/chat')}
-                className="bg-momentum-coral hover:bg-momentum-coral-dark text-white"
+                className="bg-momentum-coral hover:bg-momentum-coral-dark text-white text-sm"
               >
                 <BookOpen className="h-4 w-4 mr-2" />
                 开始实践
@@ -350,7 +350,7 @@ export default function TutorialPage() {
               <Button
                 variant="outline"
                 onClick={() => router.push('/')}
-                className="border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10"
+                className="border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10 text-sm"
               >
                 返回首页
               </Button>
