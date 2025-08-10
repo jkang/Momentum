@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trash2, Plus } from "lucide-react"
 import BottomNavigation from "@/components/bottom-navigation"
@@ -231,49 +231,60 @@ export default function TodoListPage() {
         <section className="space-y-6">
           <div>
             <h2 className="mb-4 text-base font-semibold text-momentum-forest">待完成（{pending.length}）</h2>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {pending.map((t) => (
-                <li key={t.id} className="rounded-lg border border-momentum-sage-light/30 bg-white p-4 shadow-sm mobile-card touch-feedback hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between gap-3">
-                    <label className="flex flex-1 cursor-pointer items-start gap-3">
-                      <Checkbox
-                        checked={t.completed}
-                        onCheckedChange={(v) => toggleTodo(t.id, Boolean(v))}
-                        className="mt-0.5 border-momentum-sage-light data-[state=checked]:bg-momentum-coral data-[state=checked]:border-momentum-coral"
-                      />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-momentum-forest">{t.title}</div>
-                        {shouldShowDescription(t.title, t.description) && (
-                          <div className="mt-1 text-sm text-momentum-sage-dark">{t.description}</div>
-                        )}
-                        {(t.deadlineDate || t.note) && (
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            {t.deadlineDate && (
-                              <span className="rounded-full bg-momentum-sage-light/20 px-2 py-1 text-xs text-momentum-sage-dark">
-                                截止：{t.deadlineDate}
-                              </span>
-                            )}
-                            {t.note && (
-                              <span className="rounded-full bg-momentum-coral/10 px-2 py-1 text-xs text-momentum-coral">
-                                {t.note}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                <li key={t.id} className="group relative">
+                  <div className="flex items-start gap-3 py-3 px-1 hover:bg-momentum-sage-light/5 rounded-lg transition-colors">
+                    <button
+                      onClick={() => toggleTodo(t.id, !t.completed)}
+                      className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 border-momentum-sage-light hover:border-momentum-coral flex items-center justify-center group-hover:scale-110 transition-all"
+                    >
+                      {t.completed && (
+                        <div className="w-3 h-3 rounded-full bg-momentum-coral"></div>
+                      )}
+                    </button>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-momentum-forest leading-relaxed">
+                        {t.title}
                       </div>
-                    </label>
+                      {shouldShowDescription(t.title, t.description) && (
+                        <div className="mt-1 text-sm text-momentum-muted leading-relaxed">
+                          {t.description}
+                        </div>
+                      )}
+                      {(t.deadlineDate || t.note) && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {t.deadlineDate && (
+                            <span className="inline-flex items-center gap-1 text-xs text-momentum-sage-dark">
+                              <span className="w-1 h-1 bg-momentum-sage-dark rounded-full"></span>
+                              截止 {t.deadlineDate}
+                            </span>
+                          )}
+                          {t.note && (
+                            <span className="inline-flex items-center gap-1 text-xs text-momentum-coral">
+                              <span className="w-1 h-1 bg-momentum-coral rounded-full"></span>
+                              {t.note}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 px-2 text-xs text-momentum-sage-dark hover:text-momentum-forest hover:bg-momentum-sage-light/10"
+                      className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 text-momentum-sage-dark hover:text-momentum-forest hover:bg-momentum-sage-light/20 transition-all"
                       onClick={() => removeOne(t.id)}
                       aria-label="删除"
                       title="删除"
                     >
                       <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">删除</span>
                     </Button>
                   </div>
+
+                  {/* 分隔线 */}
+                  <div className="ml-8 border-b border-momentum-sage-light/20 last:border-b-0"></div>
                 </li>
               ))}
               {pending.length === 0 && (
@@ -286,42 +297,50 @@ export default function TodoListPage() {
 
           <div>
             <h2 className="mb-4 text-base font-semibold text-momentum-forest">已完成（{done.length}）</h2>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {done.map((t) => (
-                <li key={t.id} className="rounded-lg border border-momentum-sage-light/30 bg-white p-4 opacity-60">
-                  <div className="flex items-start justify-between gap-3">
-                    <label className="flex flex-1 cursor-pointer items-start gap-3">
-                      <Checkbox
-                        checked={t.completed}
-                        onCheckedChange={(v) => toggleTodo(t.id, Boolean(v))}
-                        className="mt-0.5 border-momentum-sage-light data-[state=checked]:bg-momentum-coral data-[state=checked]:border-momentum-coral"
-                      />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium line-through text-momentum-sage-dark">{t.title}</div>
-                        {shouldShowDescription(t.title, t.description) && (
-                          <div className="mt-1 text-sm line-through text-momentum-muted">{t.description}</div>
-                        )}
-                        {t.deadlineDate && (
-                          <div className="mt-2">
-                            <span className="rounded-full bg-momentum-sage-light/20 px-2 py-1 text-xs text-momentum-sage-dark line-through">
-                              截止：{t.deadlineDate}
-                            </span>
-                          </div>
-                        )}
+                <li key={t.id} className="group relative opacity-60">
+                  <div className="flex items-start gap-3 py-3 px-1 hover:bg-momentum-sage-light/5 rounded-lg transition-colors">
+                    <button
+                      onClick={() => toggleTodo(t.id, !t.completed)}
+                      className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 border-momentum-coral bg-momentum-coral flex items-center justify-center group-hover:scale-110 transition-all"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    </button>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-momentum-sage-dark line-through leading-relaxed">
+                        {t.title}
                       </div>
-                    </label>
+                      {shouldShowDescription(t.title, t.description) && (
+                        <div className="mt-1 text-sm text-momentum-muted line-through leading-relaxed">
+                          {t.description}
+                        </div>
+                      )}
+                      {t.deadlineDate && (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center gap-1 text-xs text-momentum-sage-dark line-through">
+                            <span className="w-1 h-1 bg-momentum-sage-dark rounded-full"></span>
+                            截止 {t.deadlineDate}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 px-2 text-xs text-momentum-sage-dark hover:text-momentum-forest hover:bg-momentum-sage-light/10"
+                      className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 text-momentum-sage-dark hover:text-momentum-forest hover:bg-momentum-sage-light/20 transition-all"
                       onClick={() => removeOne(t.id)}
                       aria-label="删除"
                       title="删除"
                     >
                       <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">删除</span>
                     </Button>
                   </div>
+
+                  {/* 分隔线 */}
+                  <div className="ml-8 border-b border-momentum-sage-light/20 last:border-b-0"></div>
                 </li>
               ))}
               {done.length === 0 && (
