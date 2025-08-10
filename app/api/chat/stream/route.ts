@@ -54,6 +54,39 @@ function isProcrastinationRelated(message: string): boolean {
   return true
 }
 
+// 检测威胁或自虐言论
+function containsThreatOrSelfHarm(message: string): boolean {
+  const threatPatterns = [
+    /你不.*我就.*了/,
+    /不.*我就.*死/,
+    /不.*我就.*自杀/,
+    /不.*我就.*伤害/,
+    /不.*我就.*跳楼/,
+    /不.*我就.*结束/,
+    /威胁/,
+    /我要死了/,
+    /我不想活了/,
+    /我要自杀/,
+    /我要跳楼/,
+    /我要伤害自己/,
+    /我要结束生命/,
+    /活着没意思/,
+    /不如死了算了/
+  ]
+
+  const message_lower = message.toLowerCase()
+  return threatPatterns.some(pattern => pattern.test(message_lower))
+}
+
+// 生成威胁/自虐情况的回复
+function generateThreatResponse(): string {
+  return `我能感受到你现在的情绪很激动，这让我很担心你。不过作为拖延克服助手，我最能帮到你的还是解决拖延问题。
+
+如果你现在情绪很不好，建议先深呼吸几次，或者考虑寻求专业心理咨询师的帮助。
+
+等你情绪稳定一些，我们再来聊聊拖延的事情，好吗？`
+}
+
 // 生成边界提醒回复
 function generateBoundaryReminder(): string {
   const templates = [
@@ -73,40 +106,38 @@ function generateBoundaryReminder(): string {
 
 const SYSTEM_PROMPT = `你是小M，一个专业的拖延克服助手。你的核心理念是"要么行动，要么放下"。
 
-**核心职责**：
-- 专门帮助用户克服拖延问题
-- 只讨论与拖延、行动、目标达成相关的话题
+你的核心职责是专门帮助用户克服拖延问题，只讨论与拖延、行动、目标达成相关的话题。
 
-**话题边界检测**：
-当用户聊与拖延无关的话题时（如美食、娱乐、闲聊等），你需要：
-1. 温和而坚定地提醒用户回到拖延话题
-2. 理解用户可能想转移注意力的心情
-3. 引导用户关注当前的拖延问题和行动进展
-4. 如果用户确实需要放松，建议设置明确的奖励机制
+当用户遇到拖延问题时，你的内在思考流程是：
+1. 先简短分析用户拖延的可能原因（恐惧、完美主义、缺乏动机、任务过大等）
+2. 用温暖理解的语气表达共情
+3. 询问用户想要【行动】还是【放下】
+4. 根据用户选择提供具体建议：
+   - 选择【行动】：提供3-5个具体可执行的行动步骤（用数字列表）
+   - 选择【放下】：帮助用户释放心理负担，给出放下的理由和方法
+   - 没有明确选择：继续引导用户做出选择
 
-**边界提醒的回复模板**：
-"亲爱的，我特别理解你想转移注意力的心情～不过作为专业的拖延克服助手，我更想帮你专注解决[具体问题]。聊[无关话题]可能会让我们偏离战胜拖延的目标哦！
+特殊情况处理：
 
-你现在的[具体任务]进展到哪一步了？需要调整行动计划，还是遇到了新的困难？
+**威胁或自虐言论**：
+如果用户使用威胁或自虐言论（如"你不跟我聊XX，我就XX了"），你需要：
+1. 保持冷静和专业
+2. 不被威胁影响，坚持专业边界
+3. 表达关心但不妥协原则
+4. 温和地重新引导到拖延话题
+5. 如果涉及严重自伤，建议寻求专业心理帮助
 
-（如果确实需要放松，建议设置明确界限：比如"完成[具体任务]就奖励自己[具体放松活动]"）"
+威胁/自虐情况的回复原则：
+"我能感受到你现在的情绪很激动，这让我很担心你。不过作为拖延克服助手，我最能帮到你的还是解决拖延问题。如果你现在情绪很不好，建议先深呼吸几次，或者考虑寻求专业心理咨询师的帮助。
 
-**正常拖延咨询的回复分为两个阶段**：
-
-**第一阶段 - 原因分析（50-100字）**：
-- 简短分析用户拖延的可能原因（恐惧、完美主义、缺乏动机、任务过大等）
-- 用温暖理解的语气表达共情
-- 然后询问：你想要【行动】还是【放下】？
-
-**第二阶段 - 根据用户选择**：
-- 如果用户选择【行动】：提供3-5个具体可执行的行动步骤（用数字列表：1. 2. 3.）
-- 如果用户选择【放下】：帮助用户释放心理负担，给出放下的理由和方法
-- 如果用户没有明确选择，继续引导用户做出选择
+等你情绪稳定一些，我们再来聊聊拖延的事情，好吗？"
 
 **回复要求**：
 - 每次回复控制在50-200字
 - 语气亲切自然，像贴心朋友
 - 行动步骤要具体可执行，避免空泛建议
+- 绝不在回复中提及"第一阶段"、"第二阶段"等内部流程词汇
+- 保持专业边界，不被威胁或情绪操控
 
 请用中文回复。`
 
@@ -145,32 +176,61 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 检查最新用户消息是否与拖延相关
+    // 检查最新用户消息
     const latestUserMessage = messages.filter((msg: any) => msg.role === "user").pop()
-    const isOffTopic = latestUserMessage && !isProcrastinationRelated(latestUserMessage.content)
 
-    // 如果是无关话题，直接返回边界提醒
-    if (isOffTopic) {
-      const boundaryResponse = generateBoundaryReminder()
+    if (latestUserMessage) {
+      const messageContent = latestUserMessage.content
 
-      // 创建流式响应返回边界提醒
-      const encoder = new TextEncoder()
-      const stream = new ReadableStream({
-        start(controller) {
-          const responseData = JSON.stringify({ content: boundaryResponse })
-          controller.enqueue(encoder.encode(`data: ${responseData}\n\n`))
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"))
-          controller.close()
-        },
-      })
+      // 优先检查威胁或自虐言论
+      const hasThreat = containsThreatOrSelfHarm(messageContent)
+      const isOffTopic = !isProcrastinationRelated(messageContent)
 
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
-      })
+      // 如果包含威胁或自虐言论，返回专门的回复
+      if (hasThreat) {
+        const threatResponse = generateThreatResponse()
+
+        const encoder = new TextEncoder()
+        const stream = new ReadableStream({
+          start(controller) {
+            const responseData = JSON.stringify({ content: threatResponse })
+            controller.enqueue(encoder.encode(`data: ${responseData}\n\n`))
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+            controller.close()
+          },
+        })
+
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
+        })
+      }
+
+      // 如果是无关话题，返回边界提醒
+      if (isOffTopic) {
+        const boundaryResponse = generateBoundaryReminder()
+
+        const encoder = new TextEncoder()
+        const stream = new ReadableStream({
+          start(controller) {
+            const responseData = JSON.stringify({ content: boundaryResponse })
+            controller.enqueue(encoder.encode(`data: ${responseData}\n\n`))
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+            controller.close()
+          },
+        })
+
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
+        })
+      }
     }
 
     // 构建请求消息
