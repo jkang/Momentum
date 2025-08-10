@@ -403,7 +403,7 @@ export function useAiChat() {
     // 如果没有明确的选项标记，但包含任务拆解，自动添加确认选项
     if (containsTaskBreakdown(content)) {
       return [
-        { text: "好的，加到待办", action: "confirm_todo" },
+        { text: "OK，加到待办", action: "confirm_todo" },
         { text: "我再想想", action: "cancel_todo" }
       ]
     }
@@ -426,14 +426,14 @@ export function useAiChat() {
       }
 
       // 添加待办项
-      const added = addTodos(pendingTodos)
+      addTodos(pendingTodos)
       setPendingTodos([])
 
       // 添加确认消息
       const confirmMsg: ChatMessage = {
         id: makeId(),
         role: "assistant",
-        content: `✅ 已添加 ${added} 个行动项到待办清单。\n\n3 秒后将跳转到待办页查看。`,
+        content: `✅ 已添加到待办清单！\n\n3秒后跳转到todolist`,
         timestamp: now(),
       }
 
