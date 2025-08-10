@@ -5,11 +5,17 @@ import { useRouter } from "next/navigation"
 
 export type Role = "user" | "assistant"
 
+export interface QuickReply {
+  text: string
+  action: string
+}
+
 export interface ChatMessage {
   id: string
   role: Role
   content: string
   timestamp: number
+  quickReplies?: QuickReply[]
 }
 
 export interface ChatSession {
@@ -148,6 +154,8 @@ export function useAiChat() {
       setMessages(session.messages)
     }
   }, [updateCurrentSessionId])
+
+
 
   // 新建会话
   const startSession = useCallback(
@@ -355,6 +363,91 @@ export function useAiChat() {
     }
   }, [])
 
+  // 解析AI回复中的选项标记，生成快捷回复
+  const parseQuickReplies = useCallback((content: string): QuickReply[] => {
+    // 匹配【选项】格式的文本
+    const optionRegex = /【([^】]+)】/g
+    const matches = content.match(optionRegex)
+
+    if (!matches || matches.length < 2) {
+      return []
+    }
+
+    // 提取选项文本并生成快捷回复
+    const options = matches.map(match => {
+      const text = match.replace(/【|】/g, '')
+      return {
+        text,
+        action: "select_option"
+      }
+    })
+
+    // 去重
+    const uniqueOptions = options.filter((option, index, self) =>
+      index === self.findIndex(o => o.text === option.text)
+    )
+
+    return uniqueOptions
+  }, [])
+
+  // 处理快捷回复
+  const handleQuickReply = useCallback((action: string, text: string) => {
+    if (action === "select_option") {
+      // 处理选项选择
+      void sendMessage(text)
+    } else if (action === "confirm_todo" && pendingTodos.length > 0) {
+      // 添加用户消息
+      const userMsg: ChatMessage = {
+        id: makeId(),
+        role: "user",
+        content: text,
+        timestamp: now(),
+      }
+
+      // 添加待办项
+      const added = addTodos(pendingTodos)
+      setPendingTodos([])
+
+      // 添加确认消息
+      const confirmMsg: ChatMessage = {
+        id: makeId(),
+        role: "assistant",
+        content: `✅ 已添加 ${added} 个行动项到待办清单。\n\n3 秒后将跳转到待办页查看。`,
+        timestamp: now(),
+      }
+
+      const newMessages = [...messages, userMsg, confirmMsg]
+      setMessages(newMessages)
+      persistMessages(newMessages)
+
+      // 跳转到待办页面
+      setTimeout(() => router.push("/todolist"), 3000)
+    } else if (action === "cancel_todo") {
+      // 添加用户消息
+      const userMsg: ChatMessage = {
+        id: makeId(),
+        role: "user",
+        content: text,
+        timestamp: now(),
+      }
+
+      // 清除待办项
+      setPendingTodos([])
+
+      // 添加取消消息
+      const cancelMsg: ChatMessage = {
+        id: makeId(),
+        role: "assistant",
+        content: "好的，已取消添加。如果之后想要添加其他待办项，随时告诉我～",
+        timestamp: now(),
+      }
+
+      const newMessages = [...messages, userMsg, cancelMsg]
+      setMessages(newMessages)
+      persistMessages(newMessages)
+    }
+  }, [pendingTodos, messages, addTodos, setPendingTodos, persistMessages, router])
+
   const TUTORIALS = [
     { slug: "github", title: "GitHub 入门教程", pattern: /(github|git hub|git 的教程|github 入门|看看\s*github)/i },
     { slug: "vercel", title: "Vercel 入门教程", pattern: /(vercel|vercel 入门|部署到\s*vercel|看看\s*vercel)/i },
@@ -470,6 +563,17 @@ export function useAiChat() {
           }
         }
 
+        // 解析AI回复中的选项，自动生成快捷回复
+        if (assistantMsg.content && !todoIntent) {
+          const quickReplies = parseQuickReplies(assistantMsg.content)
+          if (quickReplies.length > 0) {
+            assistantMsg.quickReplies = quickReplies
+            working = [...nextMessages, { ...assistantMsg }]
+            setMessages(working)
+            persistMessages(working)
+          }
+        }
+
         // 处理待办相关意图
         if (todoIntent && lastAi) {
           if (todoIntent.type === 'confirm' && pendingTodos.length > 0) {
@@ -494,8 +598,12 @@ export function useAiChat() {
               const confirm: ChatMessage = {
                 id: makeId(),
                 role: "assistant",
-                content: `我从上次回复中提取到以下${todoIntent.content}项目：\n\n${specificTodos.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n请确认是否要将这些项目添加到待办清单？回复"确认"即可添加。`,
+                content: `我从上次回复中提取到以下${todoIntent.content}项目：\n\n${specificTodos.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n确认要添加到待办清单吗？`,
                 timestamp: now(),
+                quickReplies: [
+                  { text: "好的", action: "confirm_todo" },
+                  { text: "再想想", action: "cancel_todo" }
+                ]
               }
               const finalList = [...working, confirm]
               setMessages(finalList)
@@ -519,8 +627,12 @@ export function useAiChat() {
               const confirm: ChatMessage = {
                 id: makeId(),
                 role: "assistant",
-                content: `我从上次回复中提取到以下行动项：\n\n${steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n请确认是否要将这些项目添加到待办清单？回复"确认"即可添加。`,
+                content: `我从上次回复中提取到以下行动项：\n\n${steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n确认要添加到待办清单吗？`,
                 timestamp: now(),
+                quickReplies: [
+                  { text: "好的", action: "confirm_todo" },
+                  { text: "再想想", action: "cancel_todo" }
+                ]
               }
               const finalList = [...working, confirm]
               setMessages(finalList)
@@ -588,6 +700,7 @@ export function useAiChat() {
     sendMessage,
     stopGeneration,
     clearChat,
+    handleQuickReply,
     // sessions
     startSession,
     switchToSession,
