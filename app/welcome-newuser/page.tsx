@@ -1,235 +1,258 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Hand } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Logo from "@/components/logo"
 
-interface UserProfile {
-  name: string
-  procrastinationAreas: string[]
-  procrastinationReasons: string[]
-  motivationTypes: string[]
-}
+const interests = [
+  { id: "study", label: "学习成长", emoji: "📚" },
+  { id: "work", label: "工作效率", emoji: "💼" },
+  { id: "health", label: "健康生活", emoji: "🏃‍♀️" },
+  { id: "hobby", label: "兴趣爱好", emoji: "🎨" },
+  { id: "social", label: "人际关系", emoji: "👥" },
+  { id: "finance", label: "理财规划", emoji: "💰" },
+]
+
+const challenges = [
+  { id: "procrastination", label: "拖延症", description: "总是把事情推到最后一刻" },
+  { id: "perfectionism", label: "完美主义", description: "害怕做得不够好而迟迟不开始" },
+  { id: "overwhelm", label: "任务过载", description: "面对太多任务不知从何开始" },
+  { id: "motivation", label: "缺乏动力", description: "知道该做什么但提不起劲" },
+  { id: "focus", label: "注意力分散", description: "容易被其他事情打断" },
+  { id: "anxiety", label: "焦虑情绪", description: "对未来感到担忧和不安" },
+]
+
+const goals = [
+  { id: "daily", label: "每日小目标", description: "建立稳定的日常习惯" },
+  { id: "weekly", label: "每周挑战", description: "完成有意义的周目标" },
+  { id: "monthly", label: "月度成长", description: "实现重要的人生里程碑" },
+  { id: "project", label: "项目推进", description: "完成具体的工作或学习项目" },
+]
 
 export default function WelcomeNewUserPage() {
+  const [currentStep, setCurrentStep] = useState(0)
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
+  const [selectedChallenges, setSelectedChallenges] = useState<string[]>([])
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([])
+  const [userName, setUserName] = useState("")
   const router = useRouter()
-  const [showSplash, setShowSplash] = useState(true)
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: "",
-    procrastinationAreas: [],
-    procrastinationReasons: [],
-    motivationTypes: [],
-  })
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false)
-    }, 2500)
-    return () => clearTimeout(timer)
-  }, [])
-
-  const handleChoiceToggle = (category: keyof UserProfile, value: string) => {
-    if (category === "name") {
-      setUserProfile((prev) => ({ ...prev, name: value }))
-    } else {
-      setUserProfile((prev) => ({
-        ...prev,
-        [category]: prev[category].includes(value)
-          ? prev[category].filter((item) => item !== value)
-          : [...prev[category], value],
-      }))
-    }
-  }
-
-  const handleContinueToChallengeTasks = () => {
-    // 保存用户档案到localStorage
-    localStorage.setItem("userProfile", JSON.stringify(userProfile))
-    console.log("用户档案已保存到localStorage:", userProfile)
-    // 跳转到挑战任务设置页面
-    router.push("/challenge-tasks")
-  }
-
-  const canProceed = () => {
-    return (
-      userProfile.name.trim().length > 0 &&
-      userProfile.procrastinationAreas.length > 0 &&
-      userProfile.procrastinationReasons.length > 0 &&
-      userProfile.motivationTypes.length > 0
-    )
-  }
-
-  if (showSplash) {
-    return (
-      <div className="fixed inset-0 bg-warm-off-white flex flex-col items-center justify-center z-50 overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-80 h-80 bg-sunrise-coral/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-24 -left-20 w-72 h-72 bg-sage-light/40 rounded-full blur-3xl"></div>
-        <div className="relative text-center px-8">
-          <div className="animate-bounce">
-            <div className="w-48 h-48 mx-auto mb-8 bg-gradient-to-br from-sage-green to-sage-green/80 rounded-full flex items-center justify-center">
+  const steps = [
+    {
+      title: "欢迎来到即刻行动",
+      subtitle: "让我们开始你的成长之旅",
+      content: (
+        <div className="space-y-6">
+          <div className="flex flex-col items-center justify-center mb-4">
+            <div className="w-36 h-36 bg-gradient-to-br from-sage-green to-sage-green/80 rounded-full flex items-center justify-center shadow-soft mb-4">
               <div className="text-8xl">🌱</div>
             </div>
           </div>
-          <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
-            <h1 className="text-4xl font-extrabold text-soft-gray">即刻行动</h1>
-            <p className="mt-4 text-lg text-soft-gray/70">从今天起，和拖延温柔告别</p>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="请输入你的名字"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              className="w-full p-4 border border-light-gray rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-green/50"
+            />
+            <p className="text-sm text-soft-gray/70 text-center">我们会用这个名字来个性化你的体验</p>
           </div>
         </div>
-        <div className="absolute bottom-10 text-xs text-soft-gray/50">你的朋友 小M</div>
-      </div>
-    )
+      ),
+    },
+    {
+      title: "你最关心哪些领域？",
+      subtitle: "选择你想要改善的生活方面",
+      content: (
+        <div className="grid grid-cols-2 gap-3">
+          {interests.map((interest) => (
+            <button
+              key={interest.id}
+              onClick={() => {
+                if (selectedInterests.includes(interest.id)) {
+                  setSelectedInterests(selectedInterests.filter((id) => id !== interest.id))
+                } else {
+                  setSelectedInterests([...selectedInterests, interest.id])
+                }
+              }}
+              className={`p-4 rounded-2xl border-2 transition-all ${
+                selectedInterests.includes(interest.id)
+                  ? "border-sage-green bg-sage-light text-sage-dark"
+                  : "border-light-gray bg-white text-soft-gray hover:border-sage-green/50"
+              }`}
+            >
+              <div className="text-2xl mb-2">{interest.emoji}</div>
+              <div className="text-sm font-medium">{interest.label}</div>
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: "你面临的主要挑战是？",
+      subtitle: "了解你的困难，我们才能更好地帮助你",
+      content: (
+        <div className="space-y-3">
+          {challenges.map((challenge) => (
+            <button
+              key={challenge.id}
+              onClick={() => {
+                if (selectedChallenges.includes(challenge.id)) {
+                  setSelectedChallenges(selectedChallenges.filter((id) => id !== challenge.id))
+                } else {
+                  setSelectedChallenges([...selectedChallenges, challenge.id])
+                }
+              }}
+              className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                selectedChallenges.includes(challenge.id)
+                  ? "border-sage-green bg-sage-light"
+                  : "border-light-gray bg-white hover:border-sage-green/50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-soft-gray">{challenge.label}</div>
+                  <div className="text-sm text-soft-gray/70 mt-1">{challenge.description}</div>
+                </div>
+                {selectedChallenges.includes(challenge.id) && <Check className="w-5 h-5 text-sage-green" />}
+              </div>
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: "你希望如何开始？",
+      subtitle: "选择适合你的成长节奏",
+      content: (
+        <div className="space-y-3">
+          {goals.map((goal) => (
+            <button
+              key={goal.id}
+              onClick={() => {
+                if (selectedGoals.includes(goal.id)) {
+                  setSelectedGoals(selectedGoals.filter((id) => id !== goal.id))
+                } else {
+                  setSelectedGoals([...selectedGoals, goal.id])
+                }
+              }}
+              className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                selectedGoals.includes(goal.id)
+                  ? "border-sage-green bg-sage-light"
+                  : "border-light-gray bg-white hover:border-sage-green/50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-soft-gray">{goal.label}</div>
+                  <div className="text-sm text-soft-gray/70 mt-1">{goal.description}</div>
+                </div>
+                {selectedGoals.includes(goal.id) && <Check className="w-5 h-5 text-sage-green" />}
+              </div>
+            </button>
+          ))}
+        </div>
+      ),
+    },
+  ]
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1)
+    } else {
+      // 保存用户信息
+      const userProfile = {
+        name: userName,
+        interests: selectedInterests,
+        challenges: selectedChallenges,
+        goals: selectedGoals,
+        completedAt: new Date().toISOString(),
+      }
+      localStorage.setItem("userProfile", JSON.stringify(userProfile))
+      localStorage.setItem("hasCompletedOnboarding", "true")
+
+      // 跳转到挑战任务设置页面
+      router.push("/challenge-tasks")
+    }
+  }
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 0:
+        return userName.trim().length > 0
+      case 1:
+        return selectedInterests.length > 0
+      case 2:
+        return selectedChallenges.length > 0
+      case 3:
+        return selectedGoals.length > 0
+      default:
+        return true
+    }
   }
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-warm-off-white font-sans flex flex-col">
-      {/* Progress Bar */}
-      <div className="w-full bg-light-gray h-1">
-        <div
-          className="bg-sage-green h-1 transition-all duration-300"
-          style={{ width: `${canProceed() ? 100 : 25}%` }}
-        ></div>
+    <div className="min-h-screen bg-warm-off-white">
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-sm p-4 border-b border-light-gray sticky top-0 z-10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {currentStep > 0 && (
+              <button
+                onClick={handleBack}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-soft-gray/60 hover:bg-light-gray/50"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            <Logo size="sm" />
+          </div>
+          <div className="flex items-center gap-2">
+            {steps.map((_, index) => (
+              <div
+                key={index}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index <= currentStep ? "bg-sage-green" : "bg-light-gray"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
-      <main className="flex-grow px-6 pt-8 pb-8">
-        <div className="text-center animate-slide-up mb-8">
-          <div className="inline-block p-4 bg-sage-light rounded-full mb-6">
-            <Hand className="w-8 h-8 text-sage-green" />
+      {/* Content */}
+      <div className="px-4 py-8">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-soft-gray mb-2">{steps[currentStep].title}</h1>
+            <p className="text-soft-gray/70">{steps[currentStep].subtitle}</p>
           </div>
-          <h1 className="text-2xl font-bold text-soft-gray mb-2">你好，新朋友！我是小M</h1>
-          <p className="text-soft-gray/70 mb-8 leading-relaxed">
-            很高兴认识你。为了更好地陪伴你，可以花几分钟，让我更了解你吗？
-          </p>
+          <div className="mb-8">{steps[currentStep].content}</div>
         </div>
+      </div>
 
-        <div className="space-y-8">
-          {/* 第一个问题：称呼 */}
-          <div className="text-left">
-            <h2 className="font-semibold text-soft-gray mb-4 flex items-center gap-2">
-              <span className="w-6 h-6 bg-sage-green text-white rounded-full flex items-center justify-center text-sm">
-                1
-              </span>
-              首先，我该怎么称呼你呢？
-            </h2>
-            <input
-              type="text"
-              value={userProfile.name}
-              onChange={(e) => handleChoiceToggle("name", e.target.value)}
-              placeholder="请输入你的名字..."
-              className="w-full p-4 border border-light-gray rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-green/50 bg-white text-soft-gray"
-            />
-          </div>
-
-          {/* 第二个问题：拖延领域 */}
-          <div>
-            <h2 className="font-semibold text-soft-gray mb-4 flex items-center gap-2">
-              <span className="w-6 h-6 bg-sunrise-coral text-white rounded-full flex items-center justify-center text-sm">
-                2
-              </span>
-              在哪些事情上，你最容易"想做但没做"？
-            </h2>
-            <p className="text-soft-gray/70 text-sm mb-4">可以选择多个选项</p>
-            <div className="grid grid-cols-1 gap-3">
-              {["学习/工作任务", "个人成长项目", "家务整理", "健康习惯养成", "社交活动参与", "创意兴趣爱好"].map(
-                (area) => (
-                  <button
-                    key={area}
-                    onClick={() => handleChoiceToggle("procrastinationAreas", area)}
-                    className={`w-full p-3 rounded-xl border-2 text-left transition-all text-sm ${
-                      userProfile.procrastinationAreas.includes(area)
-                        ? "border-sage-green bg-sage-light text-sage-green"
-                        : "border-light-gray bg-white text-soft-gray hover:border-sage-green/50"
-                    }`}
-                  >
-                    {area}
-                  </button>
-                ),
-              )}
-            </div>
-          </div>
-
-          {/* 第三个问题：拖延原因 */}
-          <div>
-            <h2 className="font-semibold text-soft-gray mb-4 flex items-center gap-2">
-              <span className="w-6 h-6 bg-gentle-blue text-white rounded-full flex items-center justify-center text-sm">
-                3
-              </span>
-              你觉得，是什么让你停下了脚步？
-            </h2>
-            <p className="text-soft-gray/70 text-sm mb-4">了解根源，才能对症下药</p>
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                "害怕失败或被批评",
-                "追求完美，迟迟不敢开始",
-                "任务太复杂，不知从何下手",
-                "缺乏动力和兴趣",
-                "容易被手机等外界分心",
-                "时间管理困难",
-              ].map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => handleChoiceToggle("procrastinationReasons", reason)}
-                  className={`w-full p-3 rounded-xl border-2 text-left transition-all text-sm ${
-                    userProfile.procrastinationReasons.includes(reason)
-                      ? "border-sage-green bg-sage-light text-sage-green"
-                      : "border-light-gray bg-white text-soft-gray hover:border-sage-green/50"
-                  }`}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 第四个问题：激励方式 */}
-          <div>
-            <h2 className="font-semibold text-soft-gray mb-4 flex items-center gap-2">
-              <span className="w-6 h-6 bg-sunrise-coral text-white rounded-full flex items-center justify-center text-sm">
-                4
-              </span>
-              什么样的激励对你最有效？
-            </h2>
-            <p className="text-soft-gray/70 text-sm mb-4">让我知道如何更好地鼓励你</p>
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                "完成后的成就感",
-                "朋友的鼓励和陪伴",
-                "给自己一点小奖励",
-                "学到新知识和技能",
-                "看到具体的进步数据",
-                "与他人分享成果",
-              ].map((motivation) => (
-                <button
-                  key={motivation}
-                  onClick={() => handleChoiceToggle("motivationTypes", motivation)}
-                  className={`w-full p-3 rounded-xl border-2 text-left transition-all text-sm ${
-                    userProfile.motivationTypes.includes(motivation)
-                      ? "border-sage-green bg-sage-light text-sage-green"
-                      : "border-light-gray bg-white text-soft-gray hover:border-sage-green/50"
-                  }`}
-                >
-                  {motivation}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-light-gray p-4">
+        <div className="max-w-md mx-auto">
+          <Button
+            onClick={handleNext}
+            disabled={!canProceed()}
+            className="w-full bg-sage-green hover:bg-sage-dark text-black py-4 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {currentStep === steps.length - 1 ? "开始我的成长之旅" : "下一步"}
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
         </div>
-      </main>
-
-      <footer className="px-6 pb-8 pt-4">
-        {canProceed() && (
-          <div className="text-center mb-4">
-            <p className="text-soft-gray text-sm">太棒了！接下来让我们一起设置你的专属挑战任务 🎯</p>
-          </div>
-        )}
-        <button
-          onClick={handleContinueToChallengeTasks}
-          disabled={!canProceed()}
-          className={`w-full text-white py-4 rounded-2xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-            canProceed() ? "bg-sage-green hover:bg-sage-green/90 shadow-soft" : "bg-light-gray"
-          }`}
-        >
-          继续设置挑战任务 →
-        </button>
-      </footer>
+      </div>
     </div>
   )
 }

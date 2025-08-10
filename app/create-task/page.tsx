@@ -1,373 +1,146 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
-import { ChevronLeft, Lightbulb, Clock, Target, Zap } from "lucide-react"
-import { XiaoMAvatar } from "@/components/xiao-m-avatar"
-import { taskAnalyzer, type DecomposedTask } from "@/lib/task-analyzer"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, Lightbulb, Target, Clock, Zap } from "lucide-react"
 
 export default function CreateTaskPage() {
-  const [step, setStep] = useState(1)
-  const [taskData, setTaskData] = useState({
-    description: "",
-    urgency: "medium" as "low" | "medium" | "high",
-    timeAvailable: 60,
-    experience: "medium" as "beginner" | "medium" | "expert",
-  })
-  const [decomposedTask, setDecomposedTask] = useState<DecomposedTask | null>(null)
+  const router = useRouter()
+  const [task, setTask] = useState("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysis, setAnalysis] = useState<any>(null)
 
   const handleAnalyze = async () => {
-    if (!taskData.description.trim()) return
+    if (!task.trim()) return
 
     setIsAnalyzing(true)
 
-    // 模拟分析过程
-    setTimeout(() => {
-      const result = taskAnalyzer.decomposeTask(taskData.description, {
-        urgency: taskData.urgency,
-        timeAvailable: taskData.timeAvailable,
-        experience: taskData.experience,
-      })
-      setDecomposedTask(result)
-      setIsAnalyzing(false)
-      setStep(3)
-    }, 2000)
+    // 模拟AI分析过程
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    setAnalysis({
+      difficulty: "中等",
+      estimatedTime: "2-3小时",
+      breakdown: ["收集相关资料和信息", "制定详细的执行计划", "开始实际操作", "检查和完善结果"],
+      tips: ["建议分成多个小步骤完成", "可以先从最简单的部分开始", "记得适时休息，保持专注"],
+    })
+
+    setIsAnalyzing(false)
   }
 
-  const handleCreateActionPlan = () => {
-    if (!decomposedTask) return
-
-    // 保存到localStorage
-    const actionPlan = {
-      id: Date.now().toString(),
-      title: decomposedTask.originalTask,
-      steps: decomposedTask.steps.map((step, index) => ({
-        id: index + 1,
-        text: `${step.title}: ${step.description}`,
-        completed: false,
-        timeEstimate: step.timeEstimate,
-        difficulty: step.difficulty,
-        tips: step.tips,
-      })),
-      analysis: decomposedTask.analysis,
-      createdAt: new Date().toISOString(),
-    }
-
-    localStorage.setItem("currentActionPlan", JSON.stringify(actionPlan))
-
-    // 跳转到行动计划页面
-    window.location.href = "/actions"
+  const handleCreateTask = () => {
+    // 这里可以保存任务到本地存储或发送到服务器
+    console.log("创建任务:", { task, analysis })
+    router.push("/")
   }
 
-  if (step === 1) {
-    return (
-      <div className="max-w-md mx-auto min-h-screen bg-warm-off-white font-sans flex flex-col">
-        <header className="p-4 flex items-center sticky top-0 bg-warm-off-white/80 backdrop-blur-sm z-10 border-b border-light-gray">
-          <Link href="/chat" className="p-2 -ml-2">
-            <ChevronLeft className="w-6 h-6 text-soft-gray" />
-          </Link>
-          <h1 className="text-lg font-semibold text-soft-gray text-center flex-grow">任务拆解向导</h1>
-          <div className="w-6"></div>
-        </header>
+  return (
+    <div className="max-w-md mx-auto min-h-screen bg-soft-bg font-sans">
+      <header className="flex items-center p-4 bg-white border-b border-gray-100">
+        <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors mr-3">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </button>
+        <h1 className="text-lg font-semibold text-gray-800">创建新任务</h1>
+      </header>
 
-        <main className="flex-grow p-4">
-          <div className="bg-white rounded-2xl p-4 shadow-soft mb-6">
-            <div className="flex items-start gap-3 mb-4">
-              <XiaoMAvatar mood="thinking" size="md" />
-              <div className="flex-grow">
-                <div className="bg-sage-light rounded-2xl rounded-tl-sm p-3">
-                  <p className="text-soft-gray text-sm leading-relaxed">
-                    告诉我你想要完成什么任务吧！我会帮你把它分解成容易完成的小步骤 😊
-                  </p>
-                </div>
-              </div>
-            </div>
+      <main className="p-6 space-y-6">
+        <div className="text-center">
+          <div className="inline-block p-4 bg-sage-light rounded-full mb-4">
+            <Target className="w-8 h-8 text-sage-green" />
           </div>
+          <h2 className="text-xl font-bold text-soft-gray mb-2">告诉我你想做什么</h2>
+          <p className="text-soft-gray/70">小M会帮你分析任务，制定最佳执行方案</p>
+        </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-soft-gray mb-2">
-                <Target className="w-4 h-4 inline mr-1" />
-                描述你的任务
-              </label>
-              <textarea
-                value={taskData.description}
-                onChange={(e) => setTaskData((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="例如：完成竞品分析报告、学习React框架、整理房间..."
-                className="w-full p-4 border border-light-gray rounded-2xl resize-none h-24 focus:outline-none focus:ring-2 focus:ring-sage-green/50"
-              />
-            </div>
+        <div className="space-y-4">
+          <textarea
+            value={task}
+            onChange={(e) => setTask(e.target.value)}
+            placeholder="例如：学习React框架、整理房间、准备面试..."
+            className="w-full p-4 border border-light-gray rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-green/50 bg-white text-soft-gray min-h-[120px] resize-none"
+          />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-soft-gray mb-2">
-                  <Zap className="w-4 h-4 inline mr-1" />
-                  紧急程度
-                </label>
-                <select
-                  value={taskData.urgency}
-                  onChange={(e) => setTaskData((prev) => ({ ...prev, urgency: e.target.value as any }))}
-                  className="w-full p-3 border border-light-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green/50"
-                >
-                  <option value="low">不急</option>
-                  <option value="medium">一般</option>
-                  <option value="high">很急</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-soft-gray mb-2">
-                  <Clock className="w-4 h-4 inline mr-1" />
-                  可用时间
-                </label>
-                <select
-                  value={taskData.timeAvailable}
-                  onChange={(e) => setTaskData((prev) => ({ ...prev, timeAvailable: Number(e.target.value) }))}
-                  className="w-full p-3 border border-light-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green/50"
-                >
-                  <option value={30}>30分钟</option>
-                  <option value={60}>1小时</option>
-                  <option value={120}>2小时</option>
-                  <option value={240}>半天</option>
-                  <option value={480}>一整天</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-soft-gray mb-2">
-                <Lightbulb className="w-4 h-4 inline mr-1" />
-                你的经验水平
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { value: "beginner", label: "新手", desc: "第一次做" },
-                  { value: "medium", label: "一般", desc: "有些经验" },
-                  { value: "expert", label: "熟练", desc: "很有经验" },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setTaskData((prev) => ({ ...prev, experience: option.value as any }))}
-                    className={`p-3 rounded-xl border-2 text-center transition-all ${
-                      taskData.experience === option.value
-                        ? "border-sage-green bg-sage-light"
-                        : "border-light-gray hover:border-sage-green/50"
-                    }`}
-                  >
-                    <div className="font-medium text-sm">{option.label}</div>
-                    <div className="text-xs text-soft-gray/60">{option.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </main>
-
-        <footer className="p-4">
-          <button
-            onClick={() => setStep(2)}
-            disabled={!taskData.description.trim()}
-            className="w-full bg-sage-green text-white py-4 rounded-2xl font-semibold hover:bg-sage-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            开始智能分析 ✨
-          </button>
-        </footer>
-      </div>
-    )
-  }
-
-  if (step === 2) {
-    return (
-      <div className="max-w-md mx-auto min-h-screen bg-warm-off-white font-sans flex flex-col">
-        <header className="p-4 flex items-center sticky top-0 bg-warm-off-white/80 backdrop-blur-sm z-10 border-b border-light-gray">
-          <button onClick={() => setStep(1)} className="p-2 -ml-2">
-            <ChevronLeft className="w-6 h-6 text-soft-gray" />
-          </button>
-          <h1 className="text-lg font-semibold text-soft-gray text-center flex-grow">确认信息</h1>
-          <div className="w-6"></div>
-        </header>
-
-        <main className="flex-grow p-4">
-          <div className="bg-white rounded-2xl p-4 shadow-soft mb-6">
-            <div className="flex items-start gap-3 mb-4">
-              <XiaoMAvatar mood="thinking" size="md" />
-              <div className="flex-grow">
-                <div className="bg-sage-light rounded-2xl rounded-tl-sm p-3">
-                  <p className="text-soft-gray text-sm leading-relaxed">
-                    让我确认一下信息，然后为你制定最合适的行动计划！
-                  </p>
+          {!analysis && (
+            <button
+              onClick={handleAnalyze}
+              disabled={!task.trim() || isAnalyzing}
+              className="w-full bg-sage-green text-black py-4 rounded-2xl font-semibold hover:bg-sage-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isAnalyzing ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  小M正在分析中...
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-4 shadow-soft">
-              <h3 className="font-semibold text-soft-gray mb-3">任务信息</h3>
-              <div className="space-y-3">
-                <div>
-                  <span className="text-sm text-soft-gray/60">任务描述：</span>
-                  <p className="text-soft-gray font-medium">{taskData.description}</p>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-xs text-soft-gray/60">紧急程度</div>
-                    <div className="font-medium text-soft-gray">
-                      {taskData.urgency === "low" ? "不急" : taskData.urgency === "medium" ? "一般" : "很急"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-soft-gray/60">可用时间</div>
-                    <div className="font-medium text-soft-gray">
-                      {taskData.timeAvailable >= 480
-                        ? "一整天"
-                        : taskData.timeAvailable >= 240
-                          ? "半天"
-                          : taskData.timeAvailable >= 120
-                            ? `${taskData.timeAvailable / 60}小时`
-                            : `${taskData.timeAvailable}分钟`}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-soft-gray/60">经验水平</div>
-                    <div className="font-medium text-soft-gray">
-                      {taskData.experience === "beginner" ? "新手" : taskData.experience === "medium" ? "一般" : "熟练"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
-
-        <footer className="p-4">
-          <button
-            onClick={handleAnalyze}
-            disabled={isAnalyzing}
-            className="w-full bg-sage-green text-white py-4 rounded-2xl font-semibold hover:bg-sage-green/90 transition-colors disabled:opacity-50"
-          >
-            {isAnalyzing ? "小M正在分析中..." : "确认并生成计划 🚀"}
-          </button>
-        </footer>
-      </div>
-    )
-  }
-
-  if (step === 3 && decomposedTask) {
-    return (
-      <div className="max-w-md mx-auto min-h-screen bg-warm-off-white font-sans flex flex-col">
-        <header className="p-4 flex items-center sticky top-0 bg-warm-off-white/80 backdrop-blur-sm z-10 border-b border-light-gray">
-          <button onClick={() => setStep(2)} className="p-2 -ml-2">
-            <ChevronLeft className="w-6 h-6 text-soft-gray" />
-          </button>
-          <h1 className="text-lg font-semibold text-soft-gray text-center flex-grow">智能拆解结果</h1>
-          <div className="w-6"></div>
-        </header>
-
-        <main className="flex-grow p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-4 shadow-soft mb-6">
-            <div className="flex items-start gap-3 mb-4">
-              <XiaoMAvatar mood="happy" size="md" />
-              <div className="flex-grow">
-                <div className="bg-sage-light rounded-2xl rounded-tl-sm p-3">
-                  <p className="text-soft-gray text-sm leading-relaxed">
-                    太棒了！我已经为你制定了一个详细的行动计划。这样你就不会感到无从下手了 ✨
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 任务分析结果 */}
-          <div className="bg-white rounded-2xl p-4 shadow-soft mb-4">
-            <h3 className="font-semibold text-soft-gray mb-3 flex items-center">
-              <Target className="w-4 h-4 mr-2" />
-              任务分析
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="bg-sage-light rounded-xl p-3">
-                <div className="text-soft-gray/60 text-xs">任务类型</div>
-                <div className="font-medium text-soft-gray">{decomposedTask.analysis.category}</div>
-              </div>
-              <div className="bg-sage-light rounded-xl p-3">
-                <div className="text-soft-gray/60 text-xs">复杂程度</div>
-                <div className="font-medium text-soft-gray">
-                  {decomposedTask.analysis.complexity === "simple"
-                    ? "简单"
-                    : decomposedTask.analysis.complexity === "medium"
-                      ? "中等"
-                      : "复杂"}
-                </div>
-              </div>
-              <div className="bg-sage-light rounded-xl p-3">
-                <div className="text-soft-gray/60 text-xs">预计时间</div>
-                <div className="font-medium text-soft-gray">{Math.round(decomposedTask.totalTime / 60)}小时</div>
-              </div>
-              <div className="bg-sage-light rounded-xl p-3">
-                <div className="text-soft-gray/60 text-xs">难度等级</div>
-                <div className="font-medium text-soft-gray">{"⭐".repeat(decomposedTask.analysis.difficulty)}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* 拆解步骤 */}
-          <div className="bg-white rounded-2xl p-4 shadow-soft mb-4">
-            <h3 className="font-semibold text-soft-gray mb-3 flex items-center">
-              <Lightbulb className="w-4 h-4 mr-2" />
-              行动步骤 ({decomposedTask.steps.length}步)
-            </h3>
-            <div className="space-y-3">
-              {decomposedTask.steps.map((step, index) => (
-                <div key={step.id} className="border border-light-gray rounded-xl p-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-sage-green text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
-                      {index + 1}
-                    </div>
-                    <div className="flex-grow">
-                      <h4 className="font-medium text-soft-gray text-sm">{step.title}</h4>
-                      <p className="text-xs text-soft-gray/70 mt-1">{step.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-soft-gray/60">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {step.timeEstimate}分钟
-                        </span>
-                        <span>难度: {"⭐".repeat(step.difficulty)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 小贴士 */}
-          {decomposedTask.suggestions.length > 0 && (
-            <div className="bg-gentle-blue/10 rounded-2xl p-4 mb-4">
-              <h3 className="font-semibold text-soft-gray mb-2 flex items-center">💡 小M的建议</h3>
-              <ul className="space-y-1 text-sm text-soft-gray">
-                {decomposedTask.suggestions.map((suggestion, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-gentle-blue mt-1">•</span>
-                    <span>{suggestion}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+              ) : (
+                "让小M分析一下 ✨"
+              )}
+            </button>
           )}
-        </main>
+        </div>
 
-        <footer className="p-4">
-          <button
-            onClick={handleCreateActionPlan}
-            className="w-full bg-sage-green text-white py-4 rounded-2xl font-semibold hover:bg-sage-green/90 transition-colors"
-          >
-            创建行动计划 🎯
-          </button>
-        </footer>
-      </div>
-    )
-  }
+        {analysis && (
+          <div className="space-y-4 animate-fade-in">
+            <div className="bg-white rounded-2xl p-6 shadow-soft">
+              <div className="flex items-center gap-2 mb-4">
+                <Lightbulb className="w-5 h-5 text-sunrise-coral" />
+                <h3 className="font-semibold text-soft-gray">小M的分析</h3>
+              </div>
 
-  return null
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="text-center p-3 bg-sage-light rounded-xl">
+                  <div className="text-sm text-soft-gray/70">难度等级</div>
+                  <div className="font-semibold text-sage-green">{analysis.difficulty}</div>
+                </div>
+                <div className="text-center p-3 bg-gentle-blue/10 rounded-xl">
+                  <div className="text-sm text-soft-gray/70">预估时间</div>
+                  <div className="font-semibold text-gentle-blue">{analysis.estimatedTime}</div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-soft-gray mb-2 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    建议步骤
+                  </h4>
+                  <ul className="space-y-2">
+                    {analysis.breakdown.map((step: string, index: number) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-soft-gray/80">
+                        <span className="w-5 h-5 bg-sage-green text-white rounded-full flex items-center justify-center text-xs mt-0.5">
+                          {index + 1}
+                        </span>
+                        {step}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-soft-gray mb-2 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    小贴士
+                  </h4>
+                  <ul className="space-y-1">
+                    {analysis.tips.map((tip: string, index: number) => (
+                      <li key={index} className="text-sm text-soft-gray/80 flex items-start gap-2">
+                        <span className="text-sunrise-coral mt-1">•</span>
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleCreateTask}
+              className="w-full bg-sage-green text-black py-4 rounded-2xl font-semibold hover:bg-sage-green/90 transition-colors shadow-soft"
+            >
+              创建这个任务 🎯
+            </button>
+          </div>
+        )}
+      </main>
+    </div>
+  )
 }

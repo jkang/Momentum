@@ -190,7 +190,7 @@ class TaskAnalyzer {
           },
           {
             title: "核心内容创建",
-            description: "开始创建或执行主要内容",
+            description: "开始创建或执行主要内��",
             timeEstimate: 60,
             difficulty: 3,
             dependencies: ["step-2"],
@@ -408,7 +408,7 @@ class TaskAnalyzer {
           },
           {
             title: "知识体系整理",
-            description: "整理完整的知识体系和笔记",
+            description: "整���完整的知识体系和笔记",
             timeEstimate: 60,
             difficulty: 3,
             dependencies: ["step-5"],

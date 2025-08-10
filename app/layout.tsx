@@ -6,8 +6,8 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "即刻行动",
-  description: "从今天起，和拖延温柔告别",
+  title: "Momentum - 拖延克服助手",
+  description: "要么行动，要么放下。让小M帮你克服拖延，找到前进的方向。",
     generator: 'v0.dev'
 }
 

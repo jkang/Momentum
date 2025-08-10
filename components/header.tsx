@@ -1,23 +1,47 @@
 "use client"
 
-import { Bell } from "lucide-react"
+import { ArrowLeft, Settings } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Logo } from "./logo"
 
-export function Header() {
+interface HeaderProps {
+  title?: string
+  showBack?: boolean
+  showSettings?: boolean
+  showLogo?: boolean
+  onBack?: () => void
+}
+
+export function Header({ title, showBack = false, showSettings = false, showLogo = false, onBack }: HeaderProps) {
+  const router = useRouter()
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack()
+    } else {
+      router.back()
+    }
+  }
+
   return (
-    <header className="bg-soft-bg/80 backdrop-blur-sm p-4 sticky top-0 z-20">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-sage-200 flex items-center justify-center">
-            <span className="text-brand-green font-bold text-lg">思</span>
-          </div>
-          <h1 className="ml-3 text-xl font-bold text-brand-green">你好, 思慧</h1>
-        </div>
-        <div className="flex items-center">
-          <button className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200/50">
-            <Bell className="w-5 h-5" />
+    <header className="flex items-center justify-between p-4 bg-white border-b border-gray-100">
+      <div className="flex items-center gap-3">
+        {showBack && (
+          <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
-        </div>
+        )}
+
+        {showLogo && <Logo size="sm" />}
+
+        {title && <h1 className="text-lg font-semibold text-gray-800">{title}</h1>}
       </div>
+
+      {showSettings && (
+        <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <Settings className="w-5 h-5 text-gray-600" />
+        </button>
+      )}
     </header>
   )
 }
