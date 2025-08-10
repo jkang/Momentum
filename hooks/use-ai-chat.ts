@@ -242,78 +242,144 @@ export function useAiChat() {
     // 匹配数字列表格式的行动步骤
     const numbered = text.match(/^\d+\.\s*(.+)$/gm)
     if (numbered) {
-      items.push(...numbered.map((m) => m.replace(/^\d+\.\s*/, "")).filter(item => {
-        // 过滤掉分析性文字，只保留行动性内容
-        const actionKeywords = ['开始', '制定', '设置', '完成', '练习', '尝试', '联系', '准备', '安排', '执行', '写', '做', '学习', '阅读']
-        const analysisKeywords = ['因为', '所以', '可能', '通常', '一般来说', '建议', '重要的是', '需要注意']
-
-        const hasActionKeyword = actionKeywords.some(keyword => item.includes(keyword))
-        const hasAnalysisKeyword = analysisKeywords.some(keyword => item.includes(keyword))
-
-        return hasActionKeyword && !hasAnalysisKeyword && item.length > 5 && item.length < 50
-      }))
+      items.push(...numbered.map((m) => m.replace(/^\d+\.\s*/, "")))
     }
 
+    // 匹配项目符号格式
     const bullets = text.match(/^[-•]\s*(.+)$/gm)
     if (bullets) {
-      items.push(...bullets.map((m) => m.replace(/^[-•]\s*/, "")).filter(item => {
-        const actionKeywords = ['开始', '制定', '设置', '完成', '练习', '尝试', '联系', '准备', '安排', '执行', '写', '做', '学习', '阅读']
-        return actionKeywords.some(keyword => item.includes(keyword)) && item.length > 5 && item.length < 50
-      }))
+      items.push(...bullets.map((m) => m.replace(/^[-•]\s*/, "")))
     }
 
-    return items.filter((x) => x.trim()).slice(0, 6)
+    // 支持checkbox格式 [ ] 任务内容
+    const checkboxItems = text.match(/^[\s]*\[[\s]*\][\s]*(.+)$/gm)
+    if (checkboxItems) {
+      items.push(...checkboxItems.map(m => m.replace(/^[\s]*\[[\s]*\][\s]*/, "")))
+    }
+
+    // 支持特殊符号格式（如∨、图、@等）
+    const specialItems = text.match(/^[∨图@钟]\s*(.+)$/gm)
+    if (specialItems) {
+      items.push(...specialItems.map(m => m.replace(/^[∨图@钟]\s*/, "")))
+    }
+
+    // 支持时间前缀格式（如"15:00前"、"晚饭后"等）
+    const timeItems = text.match(/^[\s]*(?:\d{1,2}:\d{2}前|早上\d{1,2}点|晚饭后|下午\d点前)\s*(.+)$/gm)
+    if (timeItems) {
+      items.push(...timeItems.map(m => m.replace(/^[\s]*(?:\d{1,2}:\d{2}前|早上\d{1,2}点|晚饭后|下午\d点前)\s*/, "")))
+    }
+
+    const analysisKeywords = ['因为', '所以', '可能', '通常', '一般来说', '建议', '重要的是', '需要注意', '但是', '然而', '不过', '虽然', '尽管']
+
+    return items.filter(item => {
+      const trimmedItem = item.trim()
+      const hasAnalysisKeyword = analysisKeywords.some(keyword => trimmedItem.includes(keyword))
+
+      // 过滤掉明显的标题、时间描述等
+      const isTitle = /^(今日|明日|本周|下周|步骤|提示|小技巧|需要|时间|剩余时间|建议设定|约\d+小时)/.test(trimmedItem)
+
+      return !hasAnalysisKeyword && !isTitle && trimmedItem.length >= 3 && trimmedItem.length <= 80
+    }).slice(0, 6)
   }, [])
 
-  // 提取特定类型的待办项（如今日待办、明日待办）
-  const extractSpecificTodos = useCallback((text: string, keyword: string): string[] => {
-    // 查找包含关键词的段落
-    const lines = text.split('\n')
-    let inTargetSection = false
-    let sectionItems: string[] = []
+  // 根据用户意图，从AI回复中提取特定待办事项
+  const extractSpecificTodos = useCallback((text: string, userMessage: string): { type: 'specific'; items: string[] } | { type: 'none' } => {
+    const userLower = userMessage.toLowerCase();
+    const allKeywords = ["都添加", "全部添加", "所有的", "全部的", "今日和明日", "今天和明天"];
+    const isAddAll = allKeywords.some(k => userLower.includes(k));
+
+    const todayKeywords = ['今日', '今天'];
+    const tomorrowKeywords = ['明日', '明天'];
+
+    const wantsToday = todayKeywords.some(kw => userLower.includes(kw));
+    const wantsTomorrow = tomorrowKeywords.some(kw => userLower.includes(kw));
+
+    const extractAllItems = (text: string) => {
+        const items: string[] = [];
+
+        // 匹配多种格式的列表项
+        const patterns = [
+          /^\s*\d+\.\s*(.+)$/gm,                    // 数字列表: 1. 任务
+          /^\s*[-•]\s*(.+)$/gm,                     // 项目符号: - 任务 或 • 任务
+          /^\s*\[\s*\]\s*(.+)$/gm,                  // checkbox: [] 任务
+          /^\s*[∨图@钟]\s*(.+)$/gm,                 // 特殊符号: ∨ 任务
+          /^\s*(?:\d{1,2}:\d{2}前|早上\d{1,2}点|晚饭后|下午\d点前)\s*(.+)$/gm  // 时间前缀
+        ];
+
+        patterns.forEach(pattern => {
+          let match;
+          while ((match = pattern.exec(text)) !== null) {
+            const item = match[1].trim();
+            if (item.length > 3 && item.length < 80) {
+              // 过滤掉标题和描述性文字
+              if (!/^(今日|明日|本周|下周|步骤|提示|小技巧|需要|时间|剩余时间|建议设定|约\d+小时)/.test(item)) {
+                items.push(item);
+              }
+            }
+          }
+        });
+
+        // 去重
+        return [...new Set(items)];
+    };
+
+    if (isAddAll || (wantsToday && wantsTomorrow)) {
+        const allItems = extractAllItems(text);
+        if (allItems.length > 0) {
+            return { type: 'specific', items: allItems.slice(0, 10) };
+        }
+    }
+
+    const lines = text.split('\n');
+    let items: string[] = [];
+    let collectingFor: 'today' | 'tomorrow' | 'none' = 'none';
 
     for (const line of lines) {
-      const trimmedLine = line.trim()
+        const isTodayHeader = todayKeywords.some(kw => line.includes(kw) && !/^\s*(\d+\.|[-•]|\[\s*\])/.test(line));
+        const isTomorrowHeader = tomorrowKeywords.some(kw => line.includes(kw) && !/^\s*(\d+\.|[-•]|\[\s*\])/.test(line));
 
-      // 检测是否进入目标段落
-      if (trimmedLine.includes(keyword) && (trimmedLine.includes('待办') || trimmedLine.includes('计划') || trimmedLine.includes('任务'))) {
-        inTargetSection = true
-        sectionItems = []
-        continue
-      }
-
-      // 检测是否离开目标段落（遇到其他标题）
-      if (inTargetSection && trimmedLine.match(/^(明日|今日|本周|下周|短期|长期|第\d+|步骤)/)) {
-        if (!trimmedLine.includes(keyword)) {
-          break
+        if (isTodayHeader) {
+            collectingFor = 'today';
+            continue;
         }
-      }
-
-      // 在目标段落中提取项目
-      if (inTargetSection) {
-        const numbered = trimmedLine.match(/^\d+\.\s*(.+)$/)
-        const bulleted = trimmedLine.match(/^[-•]\s*(.+)$/)
-
-        if (numbered) {
-          const item = numbered[1].trim()
-          if (item.length > 5 && item.length < 80) {
-            sectionItems.push(item)
-          }
-        } else if (bulleted) {
-          const item = bulleted[1].trim()
-          if (item.length > 5 && item.length < 80) {
-            sectionItems.push(item)
-          }
+        if (isTomorrowHeader) {
+            collectingFor = 'tomorrow';
+            continue;
         }
-      }
+        
+        const isListItem = /^\s*(?:\d+\.|[-•]|\[\s*\])\s*(.+)/.test(line);
+        if (!isListItem) {
+            if (line.trim() !== '') {
+                 collectingFor = 'none';
+            }
+            continue;
+        }
+
+        if ((wantsToday && collectingFor === 'today') || (wantsTomorrow && collectingFor === 'tomorrow')) {
+            const itemText = line.replace(/^\s*(?:\d+\.|[-•]|\[\s*\])\s*/, '').trim();
+            if (itemText) {
+                items.push(itemText);
+            }
+        }
+    }
+    
+    if (items.length === 0) {
+        const genericKeywords = ['todo', '待办'];
+        if (genericKeywords.some(kw => userLower.includes(kw))) {
+            items = extractAllItems(text);
+        }
     }
 
-    return sectionItems.slice(0, 6)
-  }, [])
+    if (items.length > 0) {
+        return { type: 'specific', items: items.slice(0, 10) };
+    }
+
+    return { type: 'none' };
+  }, []);
 
   // 检测“加到待办”意图
-  const detectAddTodo = useCallback((user: string): { type: 'add' | 'confirm' | 'specific', content?: string } | null => {
-    const userLower = user.toLowerCase()
+  const detectAddTodo = useCallback((userMessage: string): { type: 'add_all' | 'confirm' | 'specific' | 'action_steps' | 'none' } => {
+    const userLower = userMessage.toLowerCase()
 
     // 检测确认意图
     const confirmKeywords = ["确认", "好的", "是的", "对", "没错", "正确", "添加这些"]
@@ -321,35 +387,34 @@ export function useAiChat() {
       return { type: 'confirm' }
     }
 
-    // 检测特定待办意图（如"把今日待办添加到todolist"）
-    const specificPatterns = [
-      /把(.+?)添加到/,
-      /将(.+?)加入/,
-      /(.+?)加到待办/,
-      /添加(.+?)到待办/
-    ]
-
-    for (const pattern of specificPatterns) {
-      const match = user.match(pattern)
-      if (match) {
-        return { type: 'specific', content: match[1] }
-      }
+    // 检测添加全部意图
+    const allKeywords = ["都添加", "全部添加", "所有的", "全部的", "今日和明日", "今天和明天"]
+    if (allKeywords.some(k => userLower.includes(k))) {
+      return { type: 'add_all' }
     }
 
+    // 检测特定时间意图
+    const specificKeywords = ['今日', '明日', '今天', '明天']
+    if (specificKeywords.some(k => userLower.includes(k))) {
+      return { type: 'specific' }
+    }
+    
     // 检测一般加到待办意图
-    const generalKeywords = ["加到待办", "帮我加到待办", "添加到待办", "加入待办", "放到待办", "保存到待办", "记录到待办", "加到todolist", "加到todo"]
-    if (generalKeywords.some(k => userLower.includes(k))) {
-      return { type: 'add' }
+    const generalKeywords = ["加到待办", "帮我加到待办", "添加到待办", "加入待办", "放到待办", "保存到待办", "记录到待办", "加到todolist", "加到todo", 'action', 'list', '总结', '安排', '计划']
+    const uniqueKeywords = [...new Set(generalKeywords)]
+    if (uniqueKeywords.some(k => userLower.includes(k))) {
+      return { type: 'action_steps' }
     }
-
-    return null
+    
+    return { type: 'none' }
   }, [])
 
   // 添加到待办（localStorage: momentum-todos）
   const addTodos = useCallback((steps: string[]) => {
     try {
       const existing = JSON.parse(localStorage.getItem("momentum-todos") || "[]")
-      const newOnes = steps.slice(0, 6).map((s: string) => ({
+      // 增加支持更多待办项，从6个提高到10个
+      const newOnes = steps.slice(0, 10).map((s: string) => ({
         id: makeId(),
         title: s.length > 50 ? `${s.slice(0, 50)}...` : s,
         description: s,
@@ -363,14 +428,18 @@ export function useAiChat() {
     }
   }, [])
 
-  // 检测是否包含任务拆解（数字列表）
+  // 检测是否包含任务拆解（多种列表格式）
   const containsTaskBreakdown = useCallback((content: string): boolean => {
-    // 检测是否有数字列表格式的任务拆解
+    // 检测是否有各种格式的任务拆解
     const listPatterns = [
-      /^\d+\.\s+.+$/m,  // 1. 任务
-      /^•\s+.+$/m,      // • 任务
-      /^-\s+.+$/m,      // - 任务
-      /^\*\s+.+$/m,     // * 任务
+      /^\d+\.\s+.+$/m,              // 1. 任务
+      /^•\s+.+$/m,                  // • 任务
+      /^-\s+.+$/m,                  // - 任务
+      /^\*\s+.+$/m,                 // * 任务
+      /^\[\s*\]\s+.+$/m,            // [] 任务
+      /^[∨图@钟]\s+.+$/m,           // ∨ 任务 (特殊符号)
+      /^\d{1,2}:\d{2}前\s+.+$/m,    // 15:00前 任务
+      /^(早上|晚饭后|下午)\d*点?\s+.+$/m  // 早上10点 任务
     ]
 
     return listPatterns.some(pattern => pattern.test(content))
@@ -425,12 +494,19 @@ export function useAiChat() {
         timestamp: now(),
       }
 
-      // 获取待办项：优先使用pendingTodos，如果为空则从最近的AI回复中提取
+      // 获取待办项：优先使用pendingTodos，如果为空则从最近的AI回复中智能提取
       let todosToAdd = pendingTodos
       if (todosToAdd.length === 0) {
         const lastAiMessage = [...messages].reverse().find((m) => m.role === "assistant")
         if (lastAiMessage) {
-          todosToAdd = extractActionSteps(lastAiMessage.content)
+          // 尝试使用更智能的提取方法
+          const specificResult = extractSpecificTodos(lastAiMessage.content, "全部添加")
+          if (specificResult.type === 'specific' && specificResult.items.length > 0) {
+            todosToAdd = specificResult.items
+          } else {
+            // 回退到基础提取方法
+            todosToAdd = extractActionSteps(lastAiMessage.content)
+          }
         }
       }
 
@@ -616,9 +692,16 @@ export function useAiChat() {
             // 如果包含任务拆解确认选项，自动提取任务到pendingTodos
             const hasConfirmOption = quickReplies.some(reply => reply.action === "confirm_todo")
             if (hasConfirmOption && containsTaskBreakdown(assistantMsg.content)) {
-              const tasks = extractActionSteps(assistantMsg.content)
-              if (tasks.length > 0) {
-                setPendingTodos(tasks)
+              // 尝试使用更智能的提取方法
+              const specificResult = extractSpecificTodos(assistantMsg.content, "全部添加")
+              if (specificResult.type === 'specific' && specificResult.items.length > 0) {
+                setPendingTodos(specificResult.items)
+              } else {
+                // 回退到基础提取方法
+                const tasks = extractActionSteps(assistantMsg.content)
+                if (tasks.length > 0) {
+                  setPendingTodos(tasks)
+                }
               }
             }
 
@@ -629,7 +712,7 @@ export function useAiChat() {
         }
 
         // 处理待办相关意图
-        if (todoIntent && lastAi) {
+        if (todoIntent.type !== 'none' && lastAi) {
           if (todoIntent.type === 'confirm' && pendingTodos.length > 0) {
             // 用户确认添加待办
             const added = addTodos(pendingTodos)
@@ -644,15 +727,15 @@ export function useAiChat() {
             setMessages(finalList)
             persistMessages(finalList)
             setTimeout(() => router.push("/todolist"), 3000)
-          } else if (todoIntent.type === 'specific' && todoIntent.content) {
+          } else if (todoIntent.type === 'specific' || todoIntent.type === 'add_all') {
             // 用户指定了特定类型的待办（如"今日待办"）
-            const specificTodos = extractSpecificTodos(lastAi, todoIntent.content)
-            if (specificTodos.length > 0) {
-              setPendingTodos(specificTodos)
+            const specificTodosResult = extractSpecificTodos(lastAi, content)
+            if (specificTodosResult.type === 'specific' && specificTodosResult.items.length > 0) {
+              setPendingTodos(specificTodosResult.items)
               const confirm: ChatMessage = {
                 id: makeId(),
                 role: "assistant",
-                content: `我从上次回复中提取到以下${todoIntent.content}项目：\n\n${specificTodos.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n确认要添加到待办清单吗？`,
+                content: `我从上次回复中提取到以下项目：\n\n${specificTodosResult.items.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n确认要添加到待办清单吗？`,
                 timestamp: now(),
                 quickReplies: [
                   { text: "好的", action: "confirm_todo" },
@@ -666,14 +749,14 @@ export function useAiChat() {
               const noItems: ChatMessage = {
                 id: makeId(),
                 role: "assistant",
-                content: `抱歉，我在上次回复中没有找到明确的${todoIntent.content}项目。你可以直接告诉我具体要添加哪些待办事项。`,
+                content: `抱歉，我在上次回复中没有找到明确的项目。你可以直接告诉我具体要添加哪些待办事项。`,
                 timestamp: now(),
               }
               const finalList = [...working, noItems]
               setMessages(finalList)
               persistMessages(finalList)
             }
-          } else if (todoIntent.type === 'add') {
+          } else if (todoIntent.type === 'action_steps') {
             // 一般的加到待办意图
             const steps = extractActionSteps(lastAi)
             if (steps.length > 0) {
