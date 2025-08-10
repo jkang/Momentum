@@ -6,7 +6,7 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Momentum - 拖延克服助手",
+  title: "即刻行动小M - 拖延克服助手",
   description: "要么行动，要么放下。让小M帮你克服拖延，找到前进的方向。",
     generator: 'v0.dev'
 }
@@ -18,7 +18,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className={inter.className}>{children}</body>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
+      <body className={`${inter.className} overflow-x-hidden`}>
+        <div className="min-h-screen bg-background">
+          {children}
+        </div>
+      </body>
     </html>
   )
 }

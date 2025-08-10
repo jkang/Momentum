@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import AppHeader from "@/components/app-header"
 import BottomNavigation from "@/components/bottom-navigation"
+import { PullToRefresh } from "@/components/mobile-enhancements"
 import { BookOpen, GraduationCap, FileText, BarChart3, MessagesSquare, ListTodo, AlertTriangle } from "lucide-react"
 
 type StoredTodo = {
@@ -67,8 +68,7 @@ function formatDate(date: Date) {
 export default function HomePage() {
   const [todos, setTodos] = useState<StoredTodo[]>([])
 
-  // 读取本地待办
-  useEffect(() => {
+  const loadTodos = () => {
     try {
       const raw = localStorage.getItem("momentum-todos")
       const arr: StoredTodo[] = raw ? JSON.parse(raw) : []
@@ -76,6 +76,11 @@ export default function HomePage() {
     } catch {
       setTodos([])
     }
+  }
+
+  // 读取本地待办
+  useEffect(() => {
+    loadTodos()
     const onStorage = (e: StorageEvent) => {
       // 接收待办页的自定义通知
       if (e.key === "momentum-todos") {
@@ -91,6 +96,14 @@ export default function HomePage() {
     window.addEventListener("storage", onStorage as any)
     return () => window.removeEventListener("storage", onStorage as any)
   }, [])
+
+  const handleRefresh = async () => {
+    // 模拟刷新延迟
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    loadTodos()
+    // 触发自定义事件通知其他组件更新
+    window.dispatchEvent(new CustomEvent("todos:updated"))
+  }
 
   const urgent = useMemo(() => {
     const now = new Date()
@@ -117,7 +130,8 @@ export default function HomePage() {
     <div className="min-h-screen bg-momentum-cream pb-16">
       <AppHeader />
 
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <PullToRefresh onRefresh={handleRefresh}>
+        <main className="max-w-4xl mx-auto px-4 py-8 space-y-8 mobile-nav-spacing">
         {/* 提醒条 */}
         {urgent.length > 0 && (
           <section
@@ -176,7 +190,7 @@ export default function HomePage() {
         {/* 常见拖延问题（品牌配色） */}
         <section className="space-y-4">
           <h3 className="text-lg font-medium text-momentum-forest text-center">常见拖延问题，点击快速开始：</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {QUICK_QUESTIONS.map((q) => {
               const Icon = q.icon
               const qs = new URLSearchParams({
@@ -235,6 +249,7 @@ export default function HomePage() {
               这里保留占位，不做按钮，用户可在待办页设置或 AI 自动生成 */}
         </section>
       </main>
+      </PullToRefresh>
 
       <BottomNavigation />
     </div>

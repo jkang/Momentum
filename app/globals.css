@@ -1,6 +1,19 @@
 /* Tailwind v4: use a single import */
 @import "tailwindcss";
 
+/* Mobile Safe Area Support */
+:root {
+  /* Safe area insets for mobile devices */
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-right: env(safe-area-inset-right);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+
+  /* Mobile-specific spacing */
+  --mobile-nav-height: 80px;
+  --mobile-header-height: 60px;
+}
+
 /* Momentum Design System Variables */
 :root {
   --momentum-cream: #faf9f7;
@@ -258,15 +271,33 @@
 
   /* Quick select card */
   .quick-select-card {
-    @apply bg-white border p-4 cursor-pointer transition-all duration-200;
+    @apply bg-white border p-4 cursor-pointer transition-all duration-200 touch-feedback;
     border-radius: 16px;
     border-color: rgba(168, 196, 169, 0.2);
+    min-height: 44px;
   }
   .quick-select-card:hover {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border-color: rgba(168, 196, 169, 0.3);
     background-color: rgba(244, 162, 97, 0.1);
-    transform: translateY(-2px);
+  }
+
+  /* 移动端优化 */
+  @media (max-width: 768px) {
+    .quick-select-card {
+      padding: 16px;
+      margin: 4px 0;
+    }
+    .quick-select-card:hover {
+      transform: none; /* 移动端不使用hover变换 */
+    }
+  }
+
+  /* 桌面端hover效果 */
+  @media (hover: hover) and (pointer: fine) {
+    .quick-select-card:hover {
+      transform: translateY(-2px);
+    }
   }
 
   .quick-select-icon {
@@ -323,4 +354,168 @@
 *:focus-visible {
   outline: 2px solid var(--momentum-coral);
   outline-offset: 2px;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  /* Ensure minimum touch target size */
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Optimize text input for mobile */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 16px;
+  }
+
+  /* Better spacing for mobile */
+  .mobile-spacing {
+    padding-left: max(16px, var(--safe-area-inset-left));
+    padding-right: max(16px, var(--safe-area-inset-right));
+  }
+
+  /* Mobile-friendly cards */
+  .mobile-card {
+    margin: 8px;
+    border-radius: 12px;
+  }
+}
+
+/* Touch feedback */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch devices */
+  button:active,
+  [role="button"]:active,
+  .touch-feedback:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+
+  /* Remove hover effects on touch devices */
+  button:hover,
+  [role="button"]:hover,
+  a:hover {
+    transform: none;
+  }
+}
+
+/* Safe area utilities */
+.safe-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: var(--safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-x {
+  padding-left: var(--safe-area-inset-left);
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-y {
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Mobile navigation spacing */
+.mobile-nav-spacing {
+  padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-inset-bottom));
+}
+
+/* Prevent overscroll bounce on iOS */
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile-specific utility classes */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Mobile-friendly text sizes */
+@media (max-width: 768px) {
+  .mobile-text-sm {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .mobile-text-base {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .mobile-text-lg {
+    font-size: 18px;
+    line-height: 1.4;
+  }
+}
+
+/* Improved tap targets */
+.tap-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile-optimized spacing */
+.mobile-px {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.mobile-py {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.mobile-p {
+  padding: 16px;
+}
+
+/* Responsive grid improvements */
+@media (max-width: 640px) {
+  .mobile-grid-1 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .mobile-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

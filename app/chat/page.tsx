@@ -74,12 +74,7 @@ export default function ChatPage() {
     inputRef.current?.focus()
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
+
 
   return (
     <div className="min-h-screen bg-momentum-cream pb-16 flex flex-col">
@@ -87,7 +82,7 @@ export default function ChatPage() {
 
       {/* 仅对话内容：无欢迎区/快捷卡片，避免与首页重复 */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="flex-1 overflow-y-auto px-4 py-6 mobile-spacing">
           <div className="max-w-4xl mx-auto space-y-6">
             {/* 无历史且非加载中：显示一条开场白 */}
             {messages.length === 0 && !isLoading && (
@@ -226,7 +221,7 @@ export default function ChatPage() {
         </div>
 
         {/* 输入区 */}
-        <div className="bg-momentum-white border-t border-momentum-sage-light-20 px-4 py-4">
+        <div className="bg-momentum-white border-t border-momentum-sage-light-20 px-4 py-4 safe-bottom mobile-spacing">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-end gap-3">
               <div className="flex-1">
@@ -234,10 +229,15 @@ export default function ChatPage() {
                   ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSend()
+                    }
+                  }}
                   placeholder="描述你遇到的拖延问题..."
                   disabled={isLoading}
-                  className="resize-none border-momentum-sage-light-20 focus:border-momentum-sage focus:ring-momentum-sage/20"
+                  className="resize-none border-momentum-sage-light-20 focus:border-momentum-sage focus:ring-momentum-sage/20 min-h-[44px] text-base"
                 />
               </div>
               {isLoading ? (

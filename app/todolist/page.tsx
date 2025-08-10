@@ -147,18 +147,22 @@ export default function TodoListPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6">
+    <main className="mx-auto max-w-3xl px-4 py-6 mobile-nav-spacing mobile-spacing">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-sm font-semibold text-sage-dark">待办清单</h1>
-        <div className="flex items-center gap-2">
-          <Button size="sm" className="h-7 px-2 text-xs" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="mr-1 h-3.5 w-3.5" />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            className="h-9 px-3 text-sm touch-feedback"
+            onClick={() => setShowForm((v) => !v)}
+          >
+            <Plus className="mr-1 h-4 w-4" />
             添加待办
           </Button>
           <Button
             size="sm"
             variant="secondary"
-            className="h-7 px-2 text-xs"
+            className="h-9 px-3 text-sm touch-feedback"
             onClick={removeCompleted}
             disabled={done.length === 0}
           >
@@ -217,7 +221,7 @@ export default function TodoListPage() {
           <h2 className="mb-2 text-sm font-semibold text-sage-dark">待完成（{pending.length}）</h2>
           <ul className="space-y-3">
             {pending.map((t) => (
-              <li key={t.id} className="rounded-lg border border-light-gray bg-white p-3 shadow-gentle">
+              <li key={t.id} className="rounded-lg border border-light-gray bg-white p-4 shadow-gentle mobile-card touch-feedback">
                 <div className="flex items-start justify-between gap-3">
                   <label className="flex flex-1 cursor-pointer items-start gap-3">
                     <Checkbox

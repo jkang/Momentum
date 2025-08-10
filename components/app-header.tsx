@@ -17,12 +17,12 @@ export default function AppHeader() {
   }, [])
 
   return (
-    <div className="bg-momentum-white shadow-sm border-b border-momentum-sage-light-20">
-      <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="bg-momentum-white shadow-sm border-b border-momentum-sage-light-20 safe-top">
+      <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between mobile-spacing">
         <div className="flex items-center space-x-3">
           <Logo />
           <div>
-            <h1 className="text-lg font-semibold text-momentum-forest">小M助手</h1>
+            <h1 className="text-lg font-semibold text-momentum-forest">即刻行动小M</h1>
             <p className="text-sm text-momentum-muted">要么行动，要么放下</p>
           </div>
         </div>
@@ -30,7 +30,7 @@ export default function AppHeader() {
         <div className="flex items-center gap-2">
           <Link
             href="/history"
-            className="inline-flex items-center h-9 px-3 rounded-md border border-momentum-sage-light-20 text-momentum-sage hover:text-momentum-forest hover:bg-momentum-sage-light-10 transition-colors text-sm"
+            className="inline-flex items-center min-h-[44px] px-4 rounded-md border border-momentum-sage-light-20 text-momentum-sage hover:text-momentum-forest hover:bg-momentum-sage-light-10 transition-colors text-sm touch-feedback"
           >
             聊天历史
           </Link>
