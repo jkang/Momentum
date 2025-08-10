@@ -189,7 +189,7 @@ export default function HomePage() {
             我来专门陪你告别拖延～
           </p>
            <p className="text-momentum-muted max-w-md mx-auto leading-relaxed text-sm">
-            说说你遇到的困难，我会帮你分析原因并陪你开始行动。
+            说说你遇到的困难，我会帮你分析原因并陪你行动。
           </p>
         </section>
 
