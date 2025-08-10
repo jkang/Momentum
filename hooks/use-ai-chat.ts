@@ -469,11 +469,11 @@ export function useAiChat() {
       return uniqueOptions
     }
 
-    // 如果没有明确的选项标记，但包含任务拆解，自动添加确认选项
+    // 如果没有明确的选项标记，但包含任务拆解，自动添加快捷选项
     if (containsTaskBreakdown(content)) {
       return [
-        { text: "OK，加到待办", action: "confirm_todo" },
-        { text: "我再想想", action: "cancel_todo" }
+        { text: "加到待办", action: "confirm_todo" },
+        { text: "继续聊聊", action: "cancel_todo" }
       ]
     }
 
@@ -494,32 +494,31 @@ export function useAiChat() {
         timestamp: now(),
       }
 
-      // 获取待办项：优先使用pendingTodos，如果为空则从最近的AI回复中智能提取
-      let todosToAdd = pendingTodos
-      if (todosToAdd.length === 0) {
-        const lastAiMessage = [...messages].reverse().find((m) => m.role === "assistant")
-        if (lastAiMessage) {
-          // 尝试使用更智能的提取方法
-          const specificResult = extractSpecificTodos(lastAiMessage.content, "全部添加")
-          if (specificResult.type === 'specific' && specificResult.items.length > 0) {
-            todosToAdd = specificResult.items
-          } else {
-            // 回退到基础提取方法
-            todosToAdd = extractActionSteps(lastAiMessage.content)
-          }
+      // 直接从AI的最近1条回复中提取todolist
+      const lastAiMessage = [...messages].reverse().find((m) => m.role === "assistant")
+      let todosToAdd: string[] = []
+
+      if (lastAiMessage) {
+        // 使用智能提取方法获取所有待办项
+        const specificResult = extractSpecificTodos(lastAiMessage.content, "全部添加")
+        if (specificResult.type === 'specific' && specificResult.items.length > 0) {
+          todosToAdd = specificResult.items
+        } else {
+          // 回退到基础提取方法
+          todosToAdd = extractActionSteps(lastAiMessage.content)
         }
       }
 
       if (todosToAdd.length > 0) {
-        // 添加待办项
+        // 添加待办项到用户的todolist
         const added = addTodos(todosToAdd)
-        setPendingTodos([])
+        setPendingTodos([]) // 清空pending状态
 
         // 添加确认消息
         const confirmMsg: ChatMessage = {
           id: makeId(),
           role: "assistant",
-          content: `✅ 已添加 ${added} 个行动项到待办清单！\n\n3秒后跳转到待办页查看。`,
+          content: `✅ ${added} 条 todolist 已经添加，3秒后跳转到待办页面...`,
           timestamp: now(),
         }
 
@@ -558,7 +557,7 @@ export function useAiChat() {
       const cancelMsg: ChatMessage = {
         id: makeId(),
         role: "assistant",
-        content: "没问题，你可以再想想。如果需要调整任务拆解或有其他拖延困扰，随时告诉我！记住，要么行动，要么放下。💪",
+        content: "好的，我们继续聊聊。如果需要调整任务拆解或有其他拖延困扰，随时告诉我！💪",
         timestamp: now(),
       }
 
@@ -689,21 +688,7 @@ export function useAiChat() {
           if (quickReplies.length > 0) {
             assistantMsg.quickReplies = quickReplies
 
-            // 如果包含任务拆解确认选项，自动提取任务到pendingTodos
-            const hasConfirmOption = quickReplies.some(reply => reply.action === "confirm_todo")
-            if (hasConfirmOption && containsTaskBreakdown(assistantMsg.content)) {
-              // 尝试使用更智能的提取方法
-              const specificResult = extractSpecificTodos(assistantMsg.content, "全部添加")
-              if (specificResult.type === 'specific' && specificResult.items.length > 0) {
-                setPendingTodos(specificResult.items)
-              } else {
-                // 回退到基础提取方法
-                const tasks = extractActionSteps(assistantMsg.content)
-                if (tasks.length > 0) {
-                  setPendingTodos(tasks)
-                }
-              }
-            }
+            // 不需要预先设置pendingTodos，直接在用户确认时从AI回复中提取
 
             working = [...nextMessages, { ...assistantMsg }]
             setMessages(working)
@@ -713,38 +698,45 @@ export function useAiChat() {
 
         // 处理待办相关意图
         if (todoIntent.type !== 'none' && lastAi) {
-          if (todoIntent.type === 'confirm' && pendingTodos.length > 0) {
-            // 用户确认添加待办
-            const added = addTodos(pendingTodos)
-            setPendingTodos([])
-            const confirm: ChatMessage = {
-              id: makeId(),
-              role: "assistant",
-              content: `✅ 已添加 ${added} 个行动项到待办清单。\n\n3 秒后将跳转到待办页查看。`,
-              timestamp: now(),
+          if (todoIntent.type === 'confirm') {
+            // 用户确认添加待办 - 直接从AI最近回复中提取
+            let todosToAdd: string[] = []
+            const specificResult = extractSpecificTodos(lastAi, "全部添加")
+            if (specificResult.type === 'specific' && specificResult.items.length > 0) {
+              todosToAdd = specificResult.items
+            } else {
+              todosToAdd = extractActionSteps(lastAi)
             }
-            const finalList = [...working, confirm]
-            setMessages(finalList)
-            persistMessages(finalList)
-            setTimeout(() => router.push("/todolist"), 3000)
-          } else if (todoIntent.type === 'specific' || todoIntent.type === 'add_all') {
-            // 用户指定了特定类型的待办（如"今日待办"）
-            const specificTodosResult = extractSpecificTodos(lastAi, content)
-            if (specificTodosResult.type === 'specific' && specificTodosResult.items.length > 0) {
-              setPendingTodos(specificTodosResult.items)
+
+            if (todosToAdd.length > 0) {
+              const added = addTodos(todosToAdd)
+              setPendingTodos([])
               const confirm: ChatMessage = {
                 id: makeId(),
                 role: "assistant",
-                content: `我从上次回复中提取到以下项目：\n\n${specificTodosResult.items.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n确认要添加到待办清单吗？`,
+                content: `✅ ${added} 条 todolist 已经添加，3秒后跳转到待办页面...`,
                 timestamp: now(),
-                quickReplies: [
-                  { text: "好的", action: "confirm_todo" },
-                  { text: "再想想", action: "cancel_todo" }
-                ]
               }
               const finalList = [...working, confirm]
               setMessages(finalList)
               persistMessages(finalList)
+              setTimeout(() => router.push("/todolist"), 3000)
+            }
+          } else if (todoIntent.type === 'specific' || todoIntent.type === 'add_all') {
+            // 用户指定了特定类型的待办 - 直接添加
+            const specificTodosResult = extractSpecificTodos(lastAi, content)
+            if (specificTodosResult.type === 'specific' && specificTodosResult.items.length > 0) {
+              const added = addTodos(specificTodosResult.items)
+              const confirm: ChatMessage = {
+                id: makeId(),
+                role: "assistant",
+                content: `✅ ${added} 条 todolist 已经添加，3秒后跳转到待办页面...`,
+                timestamp: now(),
+              }
+              const finalList = [...working, confirm]
+              setMessages(finalList)
+              persistMessages(finalList)
+              setTimeout(() => router.push("/todolist"), 3000)
             } else {
               const noItems: ChatMessage = {
                 id: makeId(),
@@ -757,23 +749,27 @@ export function useAiChat() {
               persistMessages(finalList)
             }
           } else if (todoIntent.type === 'action_steps') {
-            // 一般的加到待办意图
-            const steps = extractActionSteps(lastAi)
-            if (steps.length > 0) {
-              setPendingTodos(steps)
+            // 一般的加到待办意图 - 直接添加
+            let todosToAdd: string[] = []
+            const specificResult = extractSpecificTodos(lastAi, "全部添加")
+            if (specificResult.type === 'specific' && specificResult.items.length > 0) {
+              todosToAdd = specificResult.items
+            } else {
+              todosToAdd = extractActionSteps(lastAi)
+            }
+
+            if (todosToAdd.length > 0) {
+              const added = addTodos(todosToAdd)
               const confirm: ChatMessage = {
                 id: makeId(),
                 role: "assistant",
-                content: `我从上次回复中提取到以下行动项：\n\n${steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n确认要添加到待办清单吗？`,
+                content: `✅ ${added} 条 todolist 已经添加，3秒后跳转到待办页面...`,
                 timestamp: now(),
-                quickReplies: [
-                  { text: "好的", action: "confirm_todo" },
-                  { text: "再想想", action: "cancel_todo" }
-                ]
               }
               const finalList = [...working, confirm]
               setMessages(finalList)
               persistMessages(finalList)
+              setTimeout(() => router.push("/todolist"), 3000)
             } else {
               const noSteps: ChatMessage = {
                 id: makeId(),
