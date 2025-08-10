@@ -118,7 +118,7 @@ git push -u origin main
 直接用 Cursor 集成（可选）
 - 左侧 Source Control 面板 → Publish to GitHub
 - 选择组织/仓库名 → Confirm
-- 首次可能需要登录 GitHub 授权
+- 首次���能需要登录 GitHub 授权
 
 第 9 步：持续迭代的“安全提示词范式”
 - 说明目标 #43; 验收条件（可运行/可回退）
