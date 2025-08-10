@@ -1,40 +1,34 @@
-import Image from "next/image"
-import { cn } from "@/lib/utils"
+"use client"
 
-interface LogoProps {
-  size?: "sm" | "md" | "lg" | "xl"
-  showText?: boolean
+import Image from "next/image"
+
+export type LogoProps = {
+  size?: number
   className?: string
+  showText?: boolean
 }
 
-export default function Logo({ size = "md", showText = false, className }: LogoProps) {
-  const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12",
-    lg: "w-16 h-16",
-    xl: "w-24 h-24",
-  }
-
-  const textSizeClasses = {
-    sm: "text-sm",
-    md: "text-base",
-    lg: "text-lg",
-    xl: "text-xl",
-  }
-
+export function Logo({ size = 40, className = "", showText = false }: LogoProps) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <div className="relative">
+    <div className={`flex items-center gap-3 ${className}`}>
+      <div className="w-10 h-10 rounded-lg overflow-hidden">
         <Image
-          src="/logo.png"
-          alt="即刻行动 Logo"
-          width={96}
-          height={96}
-          className={cn(sizeClasses[size], "rounded-full object-contain")}
+          src="/images/logo-momentum.png"
+          alt="Momentum Logo"
+          width={size}
+          height={size}
           priority
+          className="w-full h-full object-contain"
         />
       </div>
-      {showText && <div className={cn("font-semibold text-brand-green", textSizeClasses[size])}>即刻行动</div>}
+      {showText && (
+        <div className="leading-tight">
+          <div className="text-lg font-semibold text-momentum-forest">小M助手</div>
+          <div className="text-sm text-momentum-muted">要么行动，要么放下</div>
+        </div>
+      )}
     </div>
   )
 }
+
+export default Logo

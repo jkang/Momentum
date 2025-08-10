@@ -1,67 +1,69 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
-import { Home, Target, MessageCircle, TrendingUp, Smartphone } from "lucide-react"
-import { Button } from "@/components/ui/button"
-
-const navItems = [
-  { href: "/", icon: Home, label: "主页" },
-  { href: "/challenges", icon: Target, label: "挑战" },
-  { href: "/chat", icon: MessageCircle, label: "对话" },
-  { href: "/growth", icon: TrendingUp, label: "成长" },
-]
+import { Home, MessageSquare, CheckSquare, Info } from "lucide-react"
 
 export default function BottomNavigation() {
   const pathname = usePathname()
-  const [showDevTools, setShowDevTools] = useState(false)
+  const [todoCount, setTodoCount] = useState(0)
+  useEffect(() => {
+    const readCount = () => {
+      try {
+        const todos = JSON.parse(localStorage.getItem("momentum-todos") || "[]")
+        setTodoCount((todos || []).filter((t: any) => !t.completed).length)
+      } catch {
+        setTodoCount(0)
+      }
+    }
+    readCount()
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "momentum-todos") readCount()
+    }
+    window.addEventListener("storage", onStorage)
+    const onCustom = () => readCount()
+    window.addEventListener("todos:updated", onCustom as any)
+    return () => {
+      window.removeEventListener("storage", onStorage)
+      window.removeEventListener("todos:updated", onCustom as any)
+    }
+  }, [])
+
+  const items = [
+    { href: "/", label: "主页", icon: Home },
+    { href: "/chat", label: "对话", icon: MessageSquare },
+    { href: "/todolist", label: "待办", icon: CheckSquare },
+    { href: "/about", label: "关于", icon: Info },
+  ]
 
   return (
-    <>
-      {/* Chat FAB */}
-      <div className="fixed bottom-20 right-4 z-50">
-        {showDevTools && (
-          <div className="flex flex-col gap-2 mb-2">
-            <Link href="/prototypes">
-              <Button
-                size="sm"
-                className="bg-gentle-blue hover:bg-blue-600 text-white shadow-lg rounded-full w-12 h-12 p-0"
-              >
-                <Smartphone className="w-5 h-5" />
-              </Button>
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-light-gray px-6 pt-2 pb-3">
+      <div className="max-w-4xl mx-auto flex justify-around items-center">
+        {items.map((item) => {
+          const Icon = item.icon
+          const active = pathname === item.href
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`relative flex flex-col items-center w-16 ${
+                active ? "text-momentum-sage" : "text-soft-gray/60"
+              } hover:text-momentum-forest transition-colors`}
+              aria-current={active ? "page" : undefined}
+            >
+              <Icon className="w-5 h-5" />
+              {/* 角标 */}
+              {item.href === "/todolist" && todoCount > 0 && (
+                <span className="absolute -top-1 left-7 min-w-[18px] h-[18px] px-1 rounded-full bg-momentum-sage text-white text-[10px] leading-[18px] text-center border border-white">
+                  {todoCount > 99 ? "99+" : todoCount}
+                </span>
+              )}
+              <span className="text-xs mt-1">{item.label}</span>
             </Link>
-          </div>
-        )}
-        <Link href="/chat">
-          <Button className="bg-sage-green hover:bg-sage-dark text-white shadow-lg rounded-full w-14 h-14 p-0">
-            <MessageCircle className="w-6 h-6" />
-          </Button>
-        </Link>
+          )
+        })}
       </div>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-light-gray z-40">
-        <div className="flex items-center justify-around px-4 py-2">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "text-sage-green bg-sage-light"
-                    : "text-soft-gray hover:text-sage-green hover:bg-sage-light/50"
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{item.label}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </nav>
-    </>
+    </nav>
   )
 }

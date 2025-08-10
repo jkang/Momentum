@@ -341,7 +341,7 @@ class SkillTree {
       return {
         canUnlock: false,
         progress: 0,
-        missingConditions: missingPrerequisites.map((id) => `需要先解锁: ${allSkills.find((s) => s.id === id)?.name}`),
+        missingConditions: missingPrerequisites.map((id) => `需要��解锁: ${allSkills.find((s) => s.id === id)?.name}`),
       }
     }
 

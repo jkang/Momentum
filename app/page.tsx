@@ -1,382 +1,242 @@
 "use client"
 
-import type React from "react"
+import Link from "next/link"
+import { useEffect, useMemo, useState } from "react"
+import AppHeader from "@/components/app-header"
+import BottomNavigation from "@/components/bottom-navigation"
+import { BookOpen, GraduationCap, FileText, BarChart3, MessagesSquare, ListTodo, AlertTriangle } from "lucide-react"
 
-import { useEffect, useRef, useState } from "react"
-import {
-  Send,
-  Square,
-  RotateCcw,
-  CheckSquare,
-  BookOpen,
-  GraduationCap,
-  FileText,
-  BarChart3,
-  User,
-  ArrowLeft,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useAiChat } from "@/hooks/use-ai-chat"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-
-const LOGO_URL = "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-PgJ7JkIGTS9mJybEQyaaysUC4KChJt.png"
+type StoredTodo = {
+  id: string
+  title: string
+  completed: boolean
+  // 新增/可选字段（向后兼容）
+  deadlineDate?: string // 'YYYY-MM-DD'
+  note?: string
+  createdAt?: string
+  updatedAt?: string
+}
 
 const QUICK_QUESTIONS = [
   {
     id: 1,
     icon: BookOpen,
-    iconBg: "bg-blue-500",
+    iconBg: "bg-momentum-sage",
     title: "AI产品经理课程学习困难",
     description: "文科生学习编程工具遇到困难",
-    content:
-      "我现在正在参加一个AI产品经理课程，我是文科生，学习 Vibe Coding 产品，GitHub，Vercel，Cursor 啊啊每个地方都是坑...",
+    text: "我现在正在参加一个AI产品经理课程，我是文科生，学习 Vibe Coding 产品，GitHub，Vercel，Cursor 啊啊每个地方都是坑...",
+    expert: 1,
   },
   {
     id: 2,
     icon: GraduationCap,
-    iconBg: "bg-green-500",
+    iconBg: "bg-momentum-coral",
     title: "暑假作业拖延",
     description: "马上开学但作业还没完成",
-    content: "马上开学了，暑假作业还没有做完...",
+    text: "马上开学了，暑假作业还没有做完...",
   },
   {
     id: 3,
     icon: FileText,
-    iconBg: "bg-purple-500",
+    iconBg: "bg-momentum-forest",
     title: "毕业论文初稿",
     description: "9月份要提交但完全没头绪",
-    content: "导师让我在9月份提交我的毕业论文初稿，完全没头绪...",
+    text: "导师让我在9月份提交我的毕业论文初稿，完全没头绪...",
   },
   {
     id: 4,
     icon: BarChart3,
-    iconBg: "bg-orange-500",
+    iconBg: "bg-momentum-sage-dark",
     title: "实习调研任务",
     description: "不知道如何开始客户数据分析",
-    content: "我在实习，领导让我做调研，收集客户数据做个分析，我完全不知道从哪里做起...",
+    text: "我在实习，领导让我做调研，收集客户数据做个分析，我完全不知道从哪里做起...",
   },
-]
+] as const
 
-// 专家模式隐藏上下文（不会出现在 UI，随请求发送）
-const EXPERT_SYSTEM = `
-你是“vibe coding”专家与学习教练。请在分析用户问题并给出建议时：
-- 根据用户情况适当推荐入门教程（Markdown 链接）：
-  - [GitHub 入门教程](/tutorials/github)
-  - [Vercel 入门教程](/tutorials/vercel)
-  - [Cursor 入门教程](/tutorials/cursor)
-  - [v0 入门教程](/tutorials/v0)
-- 同时给出“最多 6 条”可执行的学习行动清单（分阶段，不要一次给太多），
-  语气亲和、可落实。邀请用户说“帮我加到待办”来保存。`
+function parseDateToEndOfDay(dateStr: string): Date {
+  // 将 YYYY-MM-DD 解析为当天 23:59:59
+  return new Date(`${dateStr}T23:59:59`)
+}
+function formatDate(date: Date) {
+  const y = date.getFullYear()
+  const m = `${date.getMonth() + 1}`.padStart(2, "0")
+  const d = `${date.getDate()}`.padStart(2, "0")
+  return `${y}-${m}-${d}`
+}
 
-export default function ChatPage() {
-  const router = useRouter()
+export default function HomePage() {
+  const [todos, setTodos] = useState<StoredTodo[]>([])
 
-  const { messages, isLoading, error, sendMessage, stopGeneration, clearChat, currentSessionId } = useAiChat()
-
-  const [inputValue, setInputValue] = useState("")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
+  // 读取本地待办
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  // 发送
-  const handleSend = async () => {
-    if (!inputValue.trim() || isLoading) return
-    await sendMessage(inputValue, { titleForNewSession: inputValue.slice(0, 20) })
-    setInputValue("")
-    inputRef.current?.focus()
-  }
-
-  // 快速选择：第 1 个问题带隐藏专家上下文
-  const handleQuickSelect = async (q: (typeof QUICK_QUESTIONS)[number]) => {
-    const opts =
-      q.id === 1 ? { titleForNewSession: q.title, hiddenSystem: EXPERT_SYSTEM } : { titleForNewSession: q.title }
-    await sendMessage(q.content, opts)
-  }
-
-  const getTodoCount = () => {
     try {
-      const todos = JSON.parse(localStorage.getItem("momentum-todos") || "[]")
-      return todos.filter((t: any) => !t.completed).length
+      const raw = localStorage.getItem("momentum-todos")
+      const arr: StoredTodo[] = raw ? JSON.parse(raw) : []
+      setTodos(arr)
     } catch {
-      return 0
+      setTodos([])
     }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+    const onStorage = (e: StorageEvent) => {
+      // 接收待办页的自定义通知
+      if (e.key === "momentum-todos") {
+        try {
+          const raw = localStorage.getItem("momentum-todos")
+          const arr: StoredTodo[] = raw ? JSON.parse(raw) : []
+          setTodos(arr)
+        } catch {
+          // ignore
+        }
+      }
     }
-  }
+    window.addEventListener("storage", onStorage as any)
+    return () => window.removeEventListener("storage", onStorage as any)
+  }, [])
 
-  const goHome = () => router.push("/") // 清除 sessionId 回到欢迎页
+  const urgent = useMemo(() => {
+    const now = new Date()
+    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    const result: Array<{ id: string; title: string; status: "overdue" | "soon"; deadlineDate: string }> = []
+
+    todos.forEach((t) => {
+      if (t.completed) return
+      if (!t.deadlineDate) return
+      const dueEnd = parseDateToEndOfDay(t.deadlineDate)
+      if (dueEnd.getTime() < now.getTime()) {
+        result.push({ id: t.id, title: t.title, status: "overdue", deadlineDate: t.deadlineDate })
+        return
+      }
+      if (dueEnd.getTime() <= in24h.getTime()) {
+        result.push({ id: t.id, title: t.title, status: "soon", deadlineDate: t.deadlineDate })
+      }
+    })
+    // 仅展示最多 3 条
+    return result.slice(0, 3)
+  }, [todos])
 
   return (
-    <div className="min-h-screen bg-momentum-cream flex flex-col">
-      {/* Header */}
-      <div className="bg-momentum-white shadow-sm border-b border-momentum-sage-light-20">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {/* 返回首页按钮（在会话中显示） */}
-            {currentSessionId && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={goHome}
-                className="bg-transparent text-momentum-sage hover:text-momentum-forest"
-                aria-label="返回首页"
-                title="返回首页"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            )}
-            <div className="w-10 h-10 rounded-lg overflow-hidden">
-              <Image src={LOGO_URL || "/placeholder.svg"} alt="Momentum Logo" width={40} height={40} priority />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-momentum-forest">小M助手</h1>
-              <p className="text-sm text-momentum-muted">要么行动，要么放下</p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-momentum-cream pb-16">
+      <AppHeader />
 
-          <div className="flex items-center gap-2">
-            {/* 打断 AI 回复（头部快捷） */}
-            {isLoading && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={stopGeneration}
-                className="bg-transparent text-momentum-sage hover:text-momentum-forest"
-              >
-                <Square className="w-4 h-4 mr-1" />
-                打断
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/history")}
-              className="bg-transparent text-momentum-sage hover:text-momentum-forest"
-            >
-              聊天历史
-            </Button>
-            {getTodoCount() > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => (window.location.href = "/todolist")}
-                className="bg-transparent text-momentum-sage hover:text-momentum-forest"
-              >
-                <CheckSquare className="w-4 h-4 mr-1" />
-                待办 ({getTodoCount()})
-              </Button>
-            )}
-            {messages.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearChat}
-                className="bg-transparent text-momentum-muted hover:text-momentum-forest"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                清空对话
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+        {/* 提醒条 */}
+        {urgent.length > 0 && (
+          <section
+            aria-live="polite"
+            className="bg-white border border-momentum-coral/30 rounded-lg p-3 shadow-momentum-card"
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                <AlertTriangle className="w-5 h-5 text-momentum-coral" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-momentum-forest font-medium">
+                  有待办已超期或将在 24 小时内到期，请尽快处理：
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {urgent.map((u) => (
+                    <li key={u.id} className="text-sm text-momentum-forest flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] ${
+                          u.status === "overdue"
+                            ? "bg-momentum-coral/10 text-momentum-coral"
+                            : "bg-momentum-sage/10 text-momentum-sage"
+                        }`}
+                      >
+                        {u.status === "overdue" ? "已超期" : "即将到期"}
+                      </span>
+                      <span className="truncate">{u.title}</span>
+                      <span className="text-momentum-muted text-xs">（截止：{u.deadlineDate}）</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2">
+                  <Link
+                    href="/todolist"
+                    className="text-xs text-momentum-forest underline underline-offset-4 hover:opacity-80"
+                  >
+                    去待办列表查看
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
-      {/* Chat area */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto px-4 py-6">
-          <div className="max-w-4xl mx-auto space-y-6">
-            {messages.length === 0 ? (
-              <div className="space-y-8">
-                {/* Welcome */}
-                <div className="text-center py-8">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-lg overflow-hidden">
-                    <Image src={LOGO_URL || "/placeholder.svg"} alt="Momentum Logo" width={80} height={80} />
+        {/* 欢迎区 */}
+        <section className="text-center">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-lg overflow-hidden border border-momentum-sage-light-20 bg-white">
+            <img src="/images/logo-momentum.png" alt="Momentum Logo" width={80} height={80} />
+          </div>
+          <h2 className="text-2xl font-semibold text-momentum-forest mb-2">你好！我是小M</h2>
+          <p className="text-momentum-muted max-w-md mx-auto leading-relaxed text-sm">
+            我专门帮助你克服拖延。告诉我你遇到的困难，我会帮你分析原因并制定行动计划。
+          </p>
+        </section>
+
+        {/* 常见拖延问题（品牌配色） */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-medium text-momentum-forest text-center">常见拖延问题，点击快速开始：</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {QUICK_QUESTIONS.map((q) => {
+              const Icon = q.icon
+              const qs = new URLSearchParams({
+                autostart: "1",
+                text: q.text,
+                title: q.title,
+                ...(q.expert ? { expert: "1" } : {}),
+              }).toString()
+              return (
+                <Link key={q.id} href={`/chat?${qs}`} className="quick-select-card">
+                  <div className="flex items-start space-x-3">
+                    <div className={`quick-select-icon ${q.iconBg}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-momentum-forest mb-1 text-sm">{q.title}</h4>
+                      <p className="text-momentum-muted text-xs leading-relaxed">{q.description}</p>
+                    </div>
                   </div>
-                  <h2 className="text-2xl font-semibold text-momentum-forest mb-2">你好！我是小M</h2>
-                  <p className="text-momentum-muted max-w-md mx-auto leading-relaxed">
-                    我专门帮助你克服拖延。告诉我你遇到的困难，我会帮你分析原因并制定行动计划。
+                </Link>
+              )
+            })}
+
+            {/* 新增：我想聊聊别的拖延问题 */}
+            <Link href="/chat" className="quick-select-card">
+              <div className="flex items-start space-x-3">
+                <div className="quick-select-icon bg-momentum-sage/80">
+                  <MessagesSquare className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-momentum-forest mb-1 text-sm">我想聊聊别的拖延问题</h4>
+                  <p className="text-momentum-muted text-xs leading-relaxed">
+                    不在上面？也可以直接告诉我你正在拖延的事。
                   </p>
                 </div>
+              </div>
+            </Link>
 
-                {/* 快速选择 */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-momentum-forest text-center">常见拖延问题，点击快速开始：</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {QUICK_QUESTIONS.map((q) => {
-                      const Icon = q.icon
-                      return (
-                        <div key={q.id} className="quick-select-card" onClick={() => handleQuickSelect(q)}>
-                          <div className="flex items-start space-x-3">
-                            <div className={`quick-select-icon ${q.iconBg}`}>
-                              <Icon size={20} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-momentum-forest mb-1 text-sm">{q.title}</h4>
-                              <p className="text-momentum-muted text-xs leading-relaxed">{q.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+            {/* 新增：看看我的待办 */}
+            <Link href="/todolist" className="quick-select-card">
+              <div className="flex items-start space-x-3">
+                <div className="quick-select-icon bg-momentum-forest/80">
+                  <ListTodo className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-momentum-forest mb-1 text-sm">看看我的待办</h4>
+                  <p className="text-momentum-muted text-xs leading-relaxed">
+                    查看和管理你的行动清单，配合小M一起推进。
+                  </p>
                 </div>
               </div>
-            ) : (
-              messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} items-start gap-2`}
-                >
-                  {/* 左侧小M头像 或 右侧用户头像 */}
-                  {m.role === "assistant" && (
-                    <div className="w-7 h-7 rounded-full overflow-hidden border border-momentum-sage-light-20">
-                      <Image src={LOGO_URL || "/placeholder.svg"} alt="小M头像" width={28} height={28} />
-                    </div>
-                  )}
-
-                  {/* 气泡 */}
-                  <div
-                    className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                      m.role === "user"
-                        ? "bg-momentum-sage text-momentum-white"
-                        : "bg-momentum-white text-momentum-forest border border-momentum-sage-light-20"
-                    }`}
-                  >
-                    <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          a: ({ node, href, children, ...props }) => (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={m.role === "user" ? "underline text-white" : "underline text-momentum-sage"}
-                              {...props}
-                            >
-                              {children}
-                            </a>
-                          ),
-                          code: ({ inline, children }) =>
-                            inline ? (
-                              <code className="px-1 py-0.5 rounded bg-black/5">{children}</code>
-                            ) : (
-                              <pre className="p-3 rounded bg-black/5 overflow-x-auto text-xs">
-                                <code>{children}</code>
-                              </pre>
-                            ),
-                          ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
-                        }}
-                      >
-                        {m.content}
-                      </ReactMarkdown>
-                    </div>
-                    <div
-                      className={`text-[11px] mt-1 ${m.role === "user" ? "text-momentum-white/70" : "text-momentum-muted"}`}
-                    >
-                      {new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                  </div>
-
-                  {/* 用户右侧头像 */}
-                  {m.role === "user" && (
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center bg-momentum-sage text-white border border-momentum-sage">
-                      <User className="w-4 h-4" />
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-momentum-white border border-momentum-sage-light-20 rounded-lg px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-momentum-sage rounded-full animate-bounce"></div>
-                      <div
-                        className="w-2 h-2 bg-momentum-sage rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-momentum-sage rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
-                    </div>
-                    <span className="text-momentum-muted text-sm">小M正在思考...</span>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      onClick={stopGeneration}
-                      className="h-7 px-2 bg-transparent text-momentum-sage hover:text-momentum-forest"
-                    >
-                      <Square className="w-3 h-3 mr-1" />
-                      打断
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="flex justify-center">
-                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">{error}</div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
+            </Link>
           </div>
-        </div>
 
-        {/* 输入区 */}
-        <div className="bg-momentum-white border-t border-momentum-sage-light-20 px-4 py-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <Input
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="描述你遇到的拖延问题..."
-                  disabled={isLoading}
-                  className="resize-none border-momentum-sage-light-20 focus:border-momentum-sage focus:ring-momentum-sage/20"
-                />
-              </div>
-              {isLoading ? (
-                <Button onClick={stopGeneration} variant="outline" size="icon" className="shrink-0 bg-transparent">
-                  <Square className="w-4 h-4" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSend}
-                  disabled={!inputValue.trim()}
-                  size="icon"
-                  className="shrink-0 momentum-button-primary"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-            <div className="mt-2 text-[11px] text-momentum-muted text-center">
-              提示：当小M给出行动步骤后，说“帮我加到待办”即可保存至清单
-            </div>
-          </div>
-        </div>
-      </div>
+          {/* 便捷入口：若无截止日期也可快速设定今天/明天（可选改进）
+              这里保留占位，不做按钮，用户可在待办页设置或 AI 自动生成 */}
+        </section>
+      </main>
+
+      <BottomNavigation />
     </div>
   )
 }

@@ -1,314 +1,313 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { AlertCircle, ArrowLeft, Check, Clock, Plus, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Trash2, Plus } from "lucide-react"
 
-interface TodoItem {
+type Todo = {
   id: string
   title: string
-  description: string
+  description?: string
   completed: boolean
-  createdAt: Date
-  priority: "high" | "medium" | "low"
+  deadlineDate?: string // YYYY-MM-DD
+  note?: string
+  createdAt: string
+  updatedAt: string
+}
+
+const STORAGE_KEY = "todos"
+
+function loadTodos(): Todo[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as Todo[]
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveTodos(todos: Todo[]) {
+  if (typeof window === "undefined") return
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+}
+
+function todayYmd() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString().slice(0, 10)
+}
+
+function tomorrowYmd() {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString().slice(0, 10)
+}
+
+function normalize(str?: string) {
+  if (!str) return ""
+  return str
+    .toLowerCase()
+    .replace(/[\s\t\n\r]/g, "")
+    .replace(/[【】[\]（）()<>《》"'“”、，,。.!！?？~\-—]/g, "")
+    .trim()
+}
+
+/**
+ * 初始化时，对未完成且已过期的任务：自动把 deadline 改为明天，并在 note 标注
+ */
+function autoRollOverOverdue(todos: Todo[]): Todo[] {
+  const today = todayYmd()
+  let changed = false
+  const next = todos.map((t) => {
+    if (!t.completed && t.deadlineDate && t.deadlineDate < today) {
+      changed = true
+      const newNote = (t.note ? t.note + "；" : "") + "已重新为你改到明天"
+      return { ...t, deadlineDate: tomorrowYmd(), note: newNote, updatedAt: new Date().toISOString() }
+    }
+    return t
+  })
+  if (changed) saveTodos(next)
+  return next
 }
 
 export default function TodoListPage() {
-  const [todos, setTodos] = useState<TodoItem[]>([])
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newTodo, setNewTodo] = useState({
-    title: "",
-    description: "",
-    priority: "medium" as const,
-  })
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [newTitle, setNewTitle] = useState("")
+  const [newDesc, setNewDesc] = useState("")
+  const [newDeadline, setNewDeadline] = useState<string>("")
 
-  // 加载待办事项
+  // 首次加载
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("momentum-todos")
-      if (saved) {
-        const parsed: TodoItem[] = JSON.parse(saved).map((t: any) => ({
-          ...t,
-          createdAt: new Date(t.createdAt),
-        }))
-        setTodos(parsed)
+    const initial = autoRollOverOverdue(loadTodos())
+    setTodos(initial)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        setTodos(autoRollOverOverdue(loadTodos()))
       }
-    } catch (e) {
-      console.error("Failed to load todos:", e)
     }
+    window.addEventListener("storage", onStorage)
+    return () => window.removeEventListener("storage", onStorage)
   }, [])
 
-  // 持久化
-  const saveTodos = (next: TodoItem[]) => {
-    try {
-      localStorage.setItem("momentum-todos", JSON.stringify(next))
-      setTodos(next)
-    } catch (e) {
-      console.error("Failed to save todos:", e)
-    }
-  }
+  const pending = useMemo(() => todos.filter((t) => !t.completed), [todos])
+  const done = useMemo(() => todos.filter((t) => t.completed), [todos])
 
-  // 添加
-  const handleAddTodo = () => {
-    if (!newTodo.title.trim()) return
-    const todo: TodoItem = {
-      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      title: newTodo.title.trim(),
-      description: newTodo.description.trim(),
+  function addTodo() {
+    if (!newTitle.trim()) return
+    const now = new Date().toISOString()
+    const item: Todo = {
+      id: crypto.randomUUID(),
+      title: newTitle.trim(),
+      description: newDesc.trim() || undefined,
       completed: false,
-      createdAt: new Date(),
-      priority: newTodo.priority,
+      deadlineDate: newDeadline || undefined,
+      note: undefined,
+      createdAt: now,
+      updatedAt: now,
     }
-    saveTodos([todo, ...todos])
-    setNewTodo({ title: "", description: "", priority: "medium" })
-    setShowAddForm(false)
+    const next = [item, ...todos]
+    setTodos(next)
+    saveTodos(next)
+    setNewTitle("")
+    setNewDesc("")
+    setNewDeadline("")
+    setShowForm(false)
   }
 
-  // 切换完成
-  const toggleComplete = (id: string, checked: boolean) => {
-    const next = todos.map((t) => (t.id === id ? { ...t, completed: checked } : t))
+  function toggleTodo(id: string, checked: boolean) {
+    const next = todos.map((t) => (t.id === id ? { ...t, completed: checked, updatedAt: new Date().toISOString() } : t))
+    setTodos(next)
     saveTodos(next)
   }
 
-  // 删除
-  const deleteTodo = (id: string) => {
+  function removeCompleted() {
+    const next = todos.filter((t) => !t.completed)
+    setTodos(next)
+    saveTodos(next)
+  }
+
+  function removeOne(id: string) {
     const next = todos.filter((t) => t.id !== id)
+    setTodos(next)
     saveTodos(next)
   }
 
-  // UI 辅助
-  const getPriorityBadge = (p: TodoItem["priority"]) => {
-    switch (p) {
-      case "high":
-        return "bg-red-100 text-red-800 border-red-200"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "low":
-        return "bg-green-100 text-green-800 border-green-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
-    }
+  // 检查是否需要渲染描述：标题和描述完全一致时不渲染
+  function shouldShowDescription(title?: string, desc?: string) {
+    return !!desc && normalize(desc) !== normalize(title)
   }
-  const getPriorityText = (p: TodoItem["priority"]) =>
-    p === "high" ? "高优先级" : p === "low" ? "低优先级" : "中优先级"
-
-  const completed = todos.filter((t) => t.completed)
-  const pending = todos.filter((t) => !t.completed)
 
   return (
-    <div className="min-h-screen bg-momentum-cream">
-      {/* 顶部 */}
-      <div className="bg-momentum-white border-b border-momentum-sage-light-20">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.history.back()}
-                className="text-momentum-sage hover:text-momentum-forest"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                返回
-              </Button>
-              <div>
-                <h1 className="text-base md:text-lg font-semibold text-momentum-forest">我的待办清单</h1>
-                <p className="text-xs md:text-sm text-momentum-muted">
-                  {pending.length} 个待完成，{completed.length} 个已完成
-                </p>
-              </div>
-            </div>
-
-            <Button onClick={() => setShowAddForm((s) => !s)} className="momentum-button-primary" size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              添加待办
-            </Button>
-          </div>
+    <main className="mx-auto max-w-3xl px-4 py-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-sm font-semibold text-sage-dark">待办清单</h1>
+        <div className="flex items-center gap-2">
+          <Button size="sm" className="h-7 px-2 text-xs" onClick={() => setShowForm((v) => !v)}>
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            添加待办
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 px-2 text-xs"
+            onClick={removeCompleted}
+            disabled={done.length === 0}
+          >
+            清除已完成
+          </Button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
-        {/* 添加表单 */}
-        {showAddForm && (
-          <Card className="border-momentum-sage-light-20">
-            <CardHeader className="py-3">
-              <CardTitle className="text-momentum-forest text-base">添加新的待办事项</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-0">
-              <div>
-                <label className="block text-sm font-medium text-momentum-forest mb-1">标题 *</label>
-                <Input
-                  value={newTodo.title}
-                  onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-                  placeholder="输入待办事项标题..."
-                  className="border-momentum-sage-light-20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-momentum-forest mb-1">详细描述</label>
-                <Textarea
-                  value={newTodo.description}
-                  onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
-                  placeholder="输入详细描述..."
-                  className="border-momentum-sage-light-20"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-momentum-forest mb-1">优先级</label>
-                <select
-                  value={newTodo.priority}
-                  onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-momentum-sage-light-20 rounded-lg focus:outline-none focus:ring-2 focus:ring-momentum-sage/20"
-                >
-                  <option value="low">低优先级</option>
-                  <option value="medium">中优先级</option>
-                  <option value="high">高优先级</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3">
-                <Button onClick={handleAddTodo} className="momentum-button-primary">
-                  添加
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddForm(false)}
-                  className="border-momentum-sage-light text-momentum-sage hover:bg-momentum-sage-light-20"
-                >
-                  取消
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 列表 */}
-        {todos.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-momentum-sage-light-20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Clock className="w-8 h-8 text-momentum-sage" />
+      {showForm && (
+        <Card className="mb-4">
+          <CardHeader className="py-3">
+            <CardTitle className="text-xs font-medium text-soft-gray">新增待办</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-2">
+              <label className="text-xs text-soft-gray">标题</label>
+              <Input
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="例如：写 README"
+                className="h-9 text-sm"
+              />
             </div>
-            <h3 className="text-base font-medium text-momentum-forest mb-2">还没有待办事项</h3>
-            <p className="text-sm text-momentum-muted mb-4">与小M对话后，说“帮我加到待办”来自动添加行动步骤</p>
-            <Button onClick={() => (window.location.href = "/")} className="momentum-button-primary">
-              返回聊天开始添加
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {/* 待完成 */}
-            {pending.length > 0 && (
-              <div>
-                <h2 className="text-base font-medium text-momentum-forest mb-2 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-2 text-momentum-coral" />
-                  待完成 ({pending.length})
-                </h2>
-                <div className="space-y-2.5">
-                  {pending.map((todo) => (
-                    <Card
-                      key={todo.id}
-                      className="border-momentum-sage-light-20 hover:shadow-momentum-card transition-shadow"
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-start gap-2">
-                          <Checkbox
-                            checked={todo.completed}
-                            onCheckedChange={(v) => toggleComplete(todo.id, Boolean(v))}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-medium text-momentum-forest leading-snug truncate">
-                                  {todo.title}
-                                </h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge className={getPriorityBadge(todo.priority)}>
-                                    {getPriorityText(todo.priority)}
-                                  </Badge>
-                                  <span className="text-[11px] text-momentum-muted">
-                                    {todo.createdAt.toLocaleDateString()}
-                                  </span>
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => deleteTodo(todo.id)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 w-7 h-7"
-                                aria-label="删除"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="grid gap-2">
+              <label className="text-xs text-soft-gray">描述（可选）</label>
+              <Textarea
+                value={newDesc}
+                onChange={(e) => setNewDesc(e.target.value)}
+                placeholder="补充细节"
+                className="min-h-[72px] text-sm"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-xs text-soft-gray">截止日期（可选）</label>
+              <Input
+                type="date"
+                value={newDeadline}
+                onChange={(e) => setNewDeadline(e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" size="sm" className="h-7 px-3 text-xs" onClick={() => setShowForm(false)}>
+                取消
+              </Button>
+              <Button size="sm" className="h-7 px-3 text-xs" onClick={addTodo} disabled={!newTitle.trim()}>
+                保存
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-            {/* 已完成 */}
-            {completed.length > 0 && (
-              <div>
-                <h2 className="text-base font-medium text-momentum-forest mb-2 flex items-center">
-                  <Check className="w-4 h-4 mr-2 text-green-600" />
-                  已完成 ({completed.length})
-                </h2>
-                <div className="space-y-2.5">
-                  {completed.map((todo) => (
-                    <Card key={todo.id} className="border-momentum-sage-light-20 bg-green-50/50">
-                      <CardContent className="p-3">
-                        <div className="flex items-start gap-2">
-                          <Checkbox
-                            checked={todo.completed}
-                            onCheckedChange={(v) => toggleComplete(todo.id, Boolean(v))}
-                            className="mt-0.5 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-medium text-momentum-forest line-through opacity-70 leading-snug truncate">
-                                  {todo.title}
-                                </h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge className="bg-green-100 text-green-800 border-green-200">已完成</Badge>
-                                  <span className="text-[11px] text-momentum-muted">
-                                    {todo.createdAt.toLocaleDateString()}
-                                  </span>
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => deleteTodo(todo.id)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 w-7 h-7"
-                                aria-label="删除"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
+      <section className="space-y-6">
+        <div>
+          <h2 className="mb-2 text-sm font-semibold text-sage-dark">待完成（{pending.length}）</h2>
+          <ul className="space-y-3">
+            {pending.map((t) => (
+              <li key={t.id} className="rounded-lg border border-light-gray bg-white p-3 shadow-gentle">
+                <div className="flex items-start justify-between gap-3">
+                  <label className="flex flex-1 cursor-pointer items-start gap-3">
+                    <Checkbox
+                      checked={t.completed}
+                      onCheckedChange={(v) => toggleTodo(t.id, Boolean(v))}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="text-[15px] font-medium text-gray-700">{t.title}</div>
+                      {shouldShowDescription(t.title, t.description) && (
+                        <div className="mt-1 text-sm text-gray-500">{t.description}</div>
+                      )}
+                      {(t.deadlineDate || t.note) && (
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          {t.deadlineDate && (
+                            <span className="rounded bg-sage-light px-2 py-0.5 text-[11px] text-sage-dark">
+                              截止：{t.deadlineDate}
+                            </span>
+                          )}
+                          {t.note && (
+                            <span className="rounded bg-[#eff6ff] px-2 py-0.5 text-[11px] text-[#1e40af]">
+                              {t.note}
+                            </span>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      )}
+                    </div>
+                  </label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                    onClick={() => removeOne(t.id)}
+                    aria-label="删除"
+                    title="删除"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="sr-only">删除</span>
+                  </Button>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+              </li>
+            ))}
+            {pending.length === 0 && <li className="text-center text-xs text-gray-500">暂无待完成任务</li>}
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-sm font-semibold text-sage-dark">已完成（{done.length}）</h2>
+          <ul className="space-y-3">
+            {done.map((t) => (
+              <li key={t.id} className="rounded-lg border border-light-gray bg-white p-3 opacity-70">
+                <div className="flex items-start justify-between gap-3">
+                  <label className="flex flex-1 cursor-pointer items-start gap-3">
+                    <Checkbox
+                      checked={t.completed}
+                      onCheckedChange={(v) => toggleTodo(t.id, Boolean(v))}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="text-[15px] font-medium line-through">{t.title}</div>
+                      {shouldShowDescription(t.title, t.description) && (
+                        <div className="mt-1 text-sm line-through">{t.description}</div>
+                      )}
+                      {t.deadlineDate && (
+                        <div className="mt-1">
+                          <span className="rounded bg-sage-light px-2 py-0.5 text-[11px] text-sage-dark">
+                            截止：{t.deadlineDate}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                    onClick={() => removeOne(t.id)}
+                    aria-label="删除"
+                    title="删除"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="sr-only">删除</span>
+                  </Button>
+                </div>
+              </li>
+            ))}
+            {done.length === 0 && <li className="text-center text-xs text-gray-400">暂无已完成任务</li>}
+          </ul>
+        </div>
+      </section>
+    </main>
   )
 }

@@ -1,255 +1,268 @@
 "use client"
 
 import type React from "react"
+import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import { Send, Square, User } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import BottomNavigation from "@/components/bottom-navigation"
+import AppHeader from "@/components/app-header"
+import { useAiChat } from "@/hooks/use-ai-chat"
+import { useRouter, useSearchParams } from "next/navigation"
 
-import { useState, useEffect, useRef } from "react"
-import { ArrowLeft, Send, Mic, Paperclip } from "lucide-react"
-import Link from "next/link"
+const LOGO_URL = "/images/logo-momentum.png"
 
-interface Message {
-  id: string
-  content: string
-  sender: "user" | "assistant"
-  timestamp: Date
-  type?: "text" | "suggestion" | "encouragement"
-}
+// 专家模式隐藏上下文（不会出现在 UI，随请求发送）
+const EXPERT_SYSTEM = `
+你是“vibe coding”专家与学习教练。请在分析用户问题并给出建议时：
+- 根据用户情况适当推荐入门教程（Markdown 链接）：
+  - [GitHub 入门教程](/tutorials/github)
+  - [Vercel 入门教程](/tutorials/vercel)
+  - [Cursor 入门教程](/tutorials/cursor)
+  - [v0 入门教程](/tutorials/v0)
+- 同时给出“最多 6 条”可执行的学习行动清单（分阶段，不要一次给太多），
+  语气亲和、可落实。邀请用户说“帮我加到待办”来保存。`
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([])
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const { messages, isLoading, error, sendMessage, stopGeneration, listSessions } = useAiChat()
   const [inputValue, setInputValue] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [userName, setUserName] = useState("思慧")
+  const startedRef = useRef(false)
 
+  // 自动滚动到底部
   useEffect(() => {
-    // 获取用户名
-    const userProfile = localStorage.getItem("userProfile")
-    if (userProfile) {
-      try {
-        const profile = JSON.parse(userProfile)
-        if (profile.name) {
-          setUserName(profile.name)
-        }
-      } catch (error) {
-        console.error("解析用户档案失败:", error)
-      }
-    }
-
-    // 初始化对话
-    const initialMessages: Message[] = [
-      {
-        id: "1",
-        content: `你好${userName}！我是小M，你的专属成长伙伴。有什么想聊的吗？或者遇到什么困难需要我帮忙的？`,
-        sender: "assistant",
-        timestamp: new Date(),
-        type: "text",
-      },
-    ]
-    setMessages(initialMessages)
-  }, [userName])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  }, [messages, isLoading])
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return
+  // 首次打开 /chat 时的行为控制：
+  // 1) 若来自首页携带 autostart=1&text=...，则立即以该内容开聊（不显示开场白）
+  // 2) 若无 sessionId 且存在历史会话，则跳到最近一次会话 /chat?sessionId=...
+  // 3) 若无任何历史与 autostart，显示开场白气泡
+  useEffect(() => {
+    const sp = new URLSearchParams(searchParams?.toString() || "")
+    const sid = sp.get("sessionId")
+    const auto = sp.get("autostart")
+    const text = sp.get("text")
+    const title = sp.get("title") || (text ? text.slice(0, 20) : "")
+    const expert = sp.get("expert") === "1"
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: inputValue,
-      sender: "user",
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue("")
-    setIsTyping(true)
-
-    // 模拟小M的回复
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: generateAssistantResponse(inputValue),
-        sender: "assistant",
-        timestamp: new Date(),
-        type: "text",
+    // 仅在无现有 sessionId 时处理自动开聊或跳到最近一次会话
+    if (!sid) {
+      if (!startedRef.current && auto === "1" && text) {
+        startedRef.current = true
+        void sendMessage(text, { titleForNewSession: title, hiddenSystem: expert ? EXPERT_SYSTEM : undefined })
+        return
       }
-      setMessages((prev) => [...prev, assistantMessage])
-      setIsTyping(false)
-    }, 1500)
+      const sessions = listSessions()
+      if (sessions.length > 0) {
+        router.replace(`/chat?sessionId=${encodeURIComponent(sessions[0].id)}`)
+      }
+    }
+  }, [searchParams, sendMessage, listSessions, router])
+
+  const handleSend = async () => {
+    if (!inputValue.trim() || isLoading) return
+    await sendMessage(inputValue, { titleForNewSession: inputValue.slice(0, 20) })
+    setInputValue("")
+    inputRef.current?.focus()
   }
 
-  const generateAssistantResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase()
-
-    if (input.includes("论文") || input.includes("毕业")) {
-      return `我理解写论文的压力，${userName}。让我们把这个大任务拆解一下：\n\n1. 先花15分钟整理一下现有的资料\n2. 列出这一章需要包含的3-5个要点\n3. 选择最容易写的一个要点开始\n\n记住，完美不是目标，完成才是。你觉得从哪一步开始比较好？`
-    }
-
-    if (input.includes("拖延") || input.includes("不想做")) {
-      return `拖延是很正常的，${userName}。每个人都会有这样的时候。\n\n让我们试试"2分钟法则"：如果一件事只需要2分钟就能完成，那就立刻去做。如果需要更长时间，就把它拆解成2分钟能完成的小步骤。\n\n你现在最想完成但一直在拖延的是什么事情？`
-    }
-
-    if (input.includes("累") || input.includes("疲惫") || input.includes("压力")) {
-      return `听起来你需要好好休息一下，${userName}。压力太大的时候，强迫自己继续往往效果不好。\n\n不如先做点让自己放松的事情：\n• 深呼吸5分钟\n• 听一首喜欢的歌\n• 喝杯温水\n• 到窗边看看外面\n\n照顾好自己，才能更好地面对挑战。你想先休息一下吗？`
-    }
-
-    if (input.includes("谢谢") || input.includes("感谢")) {
-      return `不用客气，${userName}！能陪伴你成长是我的荣幸。记住，每一个小小的进步都值得庆祝。你已经很棒了！\n\n有什么其他需要帮助的吗？`
-    }
-
-    // 默认回复
-    const responses = [
-      `我听到了，${userName}。能详细说说吗？我想更好地理解你的情况。`,
-      `这听起来很重要。让我们一起想想解决的办法吧。`,
-      `我理解你的感受，${userName}。每个人都会遇到这样的时候，你并不孤单。`,
-      `很好的想法！让我们把它拆解成具体的行动步骤吧。`,
-      `我相信你能做到的，${userName}。让我们从最小的一步开始。`,
-    ]
-
-    return responses[Math.floor(Math.random() * responses.length)]
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSendMessage()
+      handleSend()
     }
   }
 
-  const quickReplies = ["我想聊聊论文的事", "感觉有点累了", "不知道从哪里开始", "需要一些鼓励"]
-
   return (
-    <div className="h-screen flex flex-col bg-warm-off-white">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm p-4 border-b border-light-gray sticky top-0 z-20">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="w-10 h-10 rounded-full flex items-center justify-center text-soft-gray/60 hover:bg-light-gray/50"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-sage-green flex items-center justify-center mr-3">
-              <span className="text-white text-sm">🌱</span>
-            </div>
-            <div>
-              <h1 className="font-bold text-soft-gray">小M</h1>
-              <p className="text-xs text-soft-gray/60">你的成长伙伴</p>
-            </div>
-          </div>
-          <div className="w-10"></div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-momentum-cream pb-16 flex flex-col">
+      <AppHeader />
 
-      {/* Messages */}
-      <main className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
+      {/* 仅对话内容：无欢迎区/快捷卡片，避免与首页重复 */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto px-4 py-6">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* 无历史且非加载中：显示一条开场白 */}
+            {messages.length === 0 && !isLoading && (
+              <div className="flex justify-start">
+                <div className="w-7 h-7 mr-2 rounded-full overflow-hidden border border-momentum-sage-light-20">
+                  <Image src={LOGO_URL || "/placeholder.svg"} alt="小M头像" width={28} height={28} />
+                </div>
+                <div className="max-w-[80%] rounded-lg px-4 py-3 bg-momentum-white text-momentum-forest border border-momentum-sage-light-20">
+                  <div className="text-sm leading-relaxed">最近有遇到什么拖延的烦恼吗？我可以帮你一起拆解。</div>
+                  <div className="text-[11px] mt-1 text-momentum-muted">现在就跟我说说吧～</div>
+                </div>
+              </div>
+            )}
+
+            {/* 历史与实时消息 */}
+            {messages.map((m) => (
               <div
-                className={`max-w-[80%] p-4 rounded-2xl ${
-                  message.sender === "user" ? "bg-sage-green text-white" : "bg-white text-soft-gray shadow-soft"
-                }`}
+                key={m.id}
+                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} items-start gap-2`}
               >
-                {message.sender === "assistant" && (
-                  <div className="flex items-center mb-2">
-                    <div className="w-6 h-6 rounded-full bg-sage-light flex items-center justify-center mr-2">
-                      <span className="text-sage-green text-xs">🌱</span>
-                    </div>
-                    <span className="text-xs text-soft-gray/60">小M</span>
+                {m.role === "assistant" && (
+                  <div className="w-7 h-7 rounded-full overflow-hidden border border-momentum-sage-light-20">
+                    <Image src={LOGO_URL || "/placeholder.svg"} alt="小M头像" width={28} height={28} />
                   </div>
                 )}
-                <p className="whitespace-pre-line leading-relaxed">{message.content}</p>
-                <p className={`text-xs mt-2 ${message.sender === "user" ? "text-white/70" : "text-soft-gray/50"}`}>
-                  {message.timestamp.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
-            </div>
-          ))}
 
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-white p-4 rounded-2xl shadow-soft">
-                <div className="flex items-center">
-                  <div className="w-6 h-6 rounded-full bg-sage-light flex items-center justify-center mr-2">
-                    <span className="text-sage-green text-xs">🌱</span>
+                <div
+                  className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                    m.role === "user"
+                      ? "bg-momentum-sage text-momentum-white"
+                      : "bg-momentum-white text-momentum-forest border border-momentum-sage-light-20"
+                  }`}
+                >
+                  <div
+                    className={m.role === "user" ? "text-sm leading-relaxed text-white" : "prose prose-sm max-w-none"}
+                  >
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({ href, children, ...props }) => (
+                          <a
+                            href={href as string}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={m.role === "user" ? "underline text-white" : "underline text-momentum-sage"}
+                            {...props}
+                          >
+                            {children}
+                          </a>
+                        ),
+                        code: ({ inline, children }) =>
+                          inline ? (
+                            <code
+                              className={
+                                m.role === "user"
+                                  ? "px-1 py-0.5 rounded bg-white/10 text-white"
+                                  : "px-1 py-0.5 rounded bg-black/5"
+                              }
+                            >
+                              {children}
+                            </code>
+                          ) : (
+                            <pre
+                              className={
+                                m.role === "user"
+                                  ? "p-3 rounded bg-white/10 overflow-x-auto text-xs text-white"
+                                  : "p-3 rounded bg-black/5 overflow-x-auto text-xs"
+                              }
+                            >
+                              <code>{children}</code>
+                            </pre>
+                          ),
+                        ul: ({ children }) => <ul className="list-disc pl-5 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1">{children}</ol>,
+                        p: ({ children }) => <p className="m-0">{children}</p>,
+                      }}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
                   </div>
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-soft-gray/40 rounded-full animate-bounce"></div>
-                    <div
-                      className="w-2 h-2 bg-soft-gray/40 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-soft-gray/40 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    ></div>
+                  <div
+                    className={`text-[11px] mt-1 ${
+                      m.role === "user" ? "text-momentum-white/70" : "text-momentum-muted"
+                    }`}
+                  >
+                    {new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+
+                {m.role === "user" && (
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center bg-momentum-sage text-white border border-momentum-sage">
+                    <User className="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-momentum-white border border-momentum-sage-light-20 rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-momentum-sage rounded-full animate-bounce" />
+                      <div
+                        className="w-2 h-2 bg-momentum-sage rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-momentum-sage rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      />
+                    </div>
+                    <span className="text-momentum-muted text-sm">小M正在思考...</span>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={stopGeneration}
+                      className="h-7 px-2 bg-transparent text-momentum-sage hover:text-momentum-forest"
+                    >
+                      <Square className="w-3 h-3 mr-1" />
+                      打断
+                    </Button>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {error && (
+              <div className="flex justify-center">
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">{error}</div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
-        {/* Quick Replies */}
-        {messages.length <= 1 && (
-          <div className="mt-6">
-            <p className="text-sm text-soft-gray/60 mb-3 px-2">你可以试试这些话题：</p>
-            <div className="flex flex-wrap gap-2">
-              {quickReplies.map((reply, index) => (
-                <button
-                  key={index}
-                  onClick={() => setInputValue(reply)}
-                  className="px-4 py-2 bg-white rounded-full text-sm text-soft-gray border border-light-gray hover:border-sage-green/50 transition-colors"
+        {/* 输入区 */}
+        <div className="bg-momentum-white border-t border-momentum-sage-light-20 px-4 py-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <Input
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="描述你遇到的拖延问题..."
+                  disabled={isLoading}
+                  className="resize-none border-momentum-sage-light-20 focus:border-momentum-sage focus:ring-momentum-sage/20"
+                />
+              </div>
+              {isLoading ? (
+                <Button onClick={stopGeneration} variant="outline" size="icon" className="shrink-0 bg-transparent">
+                  <Square className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSend}
+                  disabled={!inputValue.trim()}
+                  size="icon"
+                  className="shrink-0 momentum-button-primary"
                 >
-                  {reply}
-                </button>
-              ))}
+                  <Send className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            <div className="mt-2 text-[11px] text-momentum-muted text-center">
+              提示：当小M给出行动步骤后，说“帮我加到待办”即可保存至清单
             </div>
           </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </main>
-
-      {/* Input */}
-      <footer className="bg-white/80 backdrop-blur-sm border-t border-light-gray p-4">
-        <div className="flex items-end space-x-3">
-          <button className="w-10 h-10 rounded-full flex items-center justify-center text-soft-gray/60 hover:bg-light-gray/50">
-            <Paperclip className="w-5 h-5" />
-          </button>
-          <div className="flex-1 relative">
-            <textarea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="输入消息..."
-              className="w-full p-3 pr-12 border border-light-gray rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-sage-green/50 max-h-32"
-              rows={1}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim()}
-              className="absolute right-2 bottom-2 w-8 h-8 rounded-full bg-sage-green flex items-center justify-center text-white hover:bg-sage-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-          <button className="w-10 h-10 rounded-full flex items-center justify-center text-soft-gray/60 hover:bg-light-gray/50">
-            <Mic className="w-5 h-5" />
-          </button>
         </div>
-      </footer>
+      </div>
+
+      <BottomNavigation />
     </div>
   )
 }

@@ -102,7 +102,7 @@ export function useAiChat() {
         return s.messages
       })
     } else {
-      router.replace("/")
+      router.replace("/chat")
     }
   }, [sessionId, router])
 
@@ -128,7 +128,7 @@ export function useAiChat() {
       writeSessions(sessions)
       setCurrentSessionId(id)
       setMessages([])
-      router.replace(`/?sessionId=${encodeURIComponent(id)}`)
+      router.replace(`/chat?sessionId=${encodeURIComponent(id)}`)
       return id
     },
     [router],
@@ -155,7 +155,7 @@ export function useAiChat() {
       if (!id || id === currentSessionId) {
         setCurrentSessionId(null)
         setMessages([])
-        router.replace("/")
+        router.replace("/chat")
       }
     },
     [currentSessionId, router],
@@ -166,7 +166,7 @@ export function useAiChat() {
     localStorage.removeItem(SESSIONS_KEY)
     setCurrentSessionId(null)
     setMessages([])
-    router.replace("/")
+    router.replace("/chat")
   }, [router])
 
   // 将最新消息写回当前会话
