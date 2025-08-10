@@ -35,6 +35,7 @@ const QUICK_QUESTIONS = [
     title: "暑假作业拖延",
     description: "马上开学但作业还没完成",
     text: "马上开学了，暑假作业还没有做完...",
+    expert: undefined,
   },
   {
     id: 3,
@@ -43,6 +44,7 @@ const QUICK_QUESTIONS = [
     title: "毕业论文初稿",
     description: "9月份要提交但完全没头绪",
     text: "导师让我在9月份提交我的毕业论文初稿，完全没头绪...",
+    expert: undefined,
   },
   {
     id: 4,
@@ -51,6 +53,7 @@ const QUICK_QUESTIONS = [
     title: "实习调研任务",
     description: "不知道如何开始客户数据分析",
     text: "我在实习，领导让我做调研，收集客户数据做个分析，我完全不知道从哪里做起...",
+    expert: undefined,
   },
 ] as const
 
