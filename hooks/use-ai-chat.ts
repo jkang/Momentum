@@ -76,6 +76,7 @@ export function useAiChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pendingTodos, setPendingTodos] = useState<string[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
   // 初始化：根据 ?sessionId 加载
@@ -218,10 +219,84 @@ export function useAiChat() {
     return items.filter((x) => x.trim()).slice(0, 6)
   }, [])
 
+  // 提取特定类型的待办项（如今日待办、明日待办）
+  const extractSpecificTodos = useCallback((text: string, keyword: string): string[] => {
+    // 查找包含关键词的段落
+    const lines = text.split('\n')
+    let inTargetSection = false
+    let sectionItems: string[] = []
+
+    for (const line of lines) {
+      const trimmedLine = line.trim()
+
+      // 检测是否进入目标段落
+      if (trimmedLine.includes(keyword) && (trimmedLine.includes('待办') || trimmedLine.includes('计划') || trimmedLine.includes('任务'))) {
+        inTargetSection = true
+        sectionItems = []
+        continue
+      }
+
+      // 检测是否离开目标段落（遇到其他标题）
+      if (inTargetSection && trimmedLine.match(/^(明日|今日|本周|下周|短期|长期|第\d+|步骤)/)) {
+        if (!trimmedLine.includes(keyword)) {
+          break
+        }
+      }
+
+      // 在目标段落中提取项目
+      if (inTargetSection) {
+        const numbered = trimmedLine.match(/^\d+\.\s*(.+)$/)
+        const bulleted = trimmedLine.match(/^[-•]\s*(.+)$/)
+
+        if (numbered) {
+          const item = numbered[1].trim()
+          if (item.length > 5 && item.length < 80) {
+            sectionItems.push(item)
+          }
+        } else if (bulleted) {
+          const item = bulleted[1].trim()
+          if (item.length > 5 && item.length < 80) {
+            sectionItems.push(item)
+          }
+        }
+      }
+    }
+
+    return sectionItems.slice(0, 6)
+  }, [])
+
   // 检测“加到待办”意图
-  const detectAddTodo = useCallback((user: string): boolean => {
-    const list = ["帮我加到待办", "添加到待办", "加入待办", "放到待办", "保存到待办", "记录到待办"]
-    return list.some((k) => user.toLowerCase().includes(k.toLowerCase()))
+  const detectAddTodo = useCallback((user: string): { type: 'add' | 'confirm' | 'specific', content?: string } | null => {
+    const userLower = user.toLowerCase()
+
+    // 检测确认意图
+    const confirmKeywords = ["确认", "好的", "是的", "对", "没错", "正确", "添加这些"]
+    if (confirmKeywords.some(k => userLower.includes(k))) {
+      return { type: 'confirm' }
+    }
+
+    // 检测特定待办意图（如"把今日待办添加到todolist"）
+    const specificPatterns = [
+      /把(.+?)添加到/,
+      /将(.+?)加入/,
+      /(.+?)加到待办/,
+      /添加(.+?)到待办/
+    ]
+
+    for (const pattern of specificPatterns) {
+      const match = user.match(pattern)
+      if (match) {
+        return { type: 'specific', content: match[1] }
+      }
+    }
+
+    // 检测一般加到待办意图
+    const generalKeywords = ["帮我加到待办", "添加到待办", "加入待办", "放到待办", "保存到待办", "记录到待办"]
+    if (generalKeywords.some(k => userLower.includes(k))) {
+      return { type: 'add' }
+    }
+
+    return null
   }, [])
 
   // 添加到待办（localStorage: momentum-todos）
@@ -295,7 +370,7 @@ export function useAiChat() {
         tutorialPrompt = `\n\n另外，我发现有个相关教程可能对你有帮助：📘 [${tutorialHit.title}](/tutorials/${tutorialHit.slug})。如果需要，我可以根据教程为你拆解学习行动项。`
       }
 
-      const wantAddTodo = detectAddTodo(content)
+      const todoIntent = detectAddTodo(content)
       const lastAi = [...messages].reverse().find((m) => m.role === "assistant")?.content || ""
 
       try {
@@ -360,20 +435,72 @@ export function useAiChat() {
           }
         }
 
-        if (wantAddTodo && lastAi) {
-          const steps = extractActionSteps(lastAi)
-          if (steps.length) {
-            const added = addTodos(steps)
+        // 处理待办相关意图
+        if (todoIntent && lastAi) {
+          if (todoIntent.type === 'confirm' && pendingTodos.length > 0) {
+            // 用户确认添加待办
+            const added = addTodos(pendingTodos)
+            setPendingTodos([])
             const confirm: ChatMessage = {
               id: makeId(),
               role: "assistant",
-              content: `✅ 已添加 ${added} 个学习行动项到待办清单。\n3 秒后将跳转到待办页查看。`,
+              content: `✅ 已添加 ${added} 个行动项到待办清单。\n\n3 秒后将跳转到待办页查看。`,
               timestamp: now(),
             }
             const finalList = [...working, confirm]
             setMessages(finalList)
             persistMessages(finalList)
             setTimeout(() => router.push("/todolist"), 3000)
+          } else if (todoIntent.type === 'specific' && todoIntent.content) {
+            // 用户指定了特定类型的待办（如"今日待办"）
+            const specificTodos = extractSpecificTodos(lastAi, todoIntent.content)
+            if (specificTodos.length > 0) {
+              setPendingTodos(specificTodos)
+              const confirm: ChatMessage = {
+                id: makeId(),
+                role: "assistant",
+                content: `我从上次回复中提取到以下${todoIntent.content}项目：\n\n${specificTodos.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n请确认是否要将这些项目添加到待办清单？回复"确认"即可添加。`,
+                timestamp: now(),
+              }
+              const finalList = [...working, confirm]
+              setMessages(finalList)
+              persistMessages(finalList)
+            } else {
+              const noItems: ChatMessage = {
+                id: makeId(),
+                role: "assistant",
+                content: `抱歉，我在上次回复中没有找到明确的${todoIntent.content}项目。你可以直接告诉我具体要添加哪些待办事项。`,
+                timestamp: now(),
+              }
+              const finalList = [...working, noItems]
+              setMessages(finalList)
+              persistMessages(finalList)
+            }
+          } else if (todoIntent.type === 'add') {
+            // 一般的加到待办意图
+            const steps = extractActionSteps(lastAi)
+            if (steps.length > 0) {
+              setPendingTodos(steps)
+              const confirm: ChatMessage = {
+                id: makeId(),
+                role: "assistant",
+                content: `我从上次回复中提取到以下行动项：\n\n${steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}\n\n请确认是否要将这些项目添加到待办清单？回复"确认"即可添加。`,
+                timestamp: now(),
+              }
+              const finalList = [...working, confirm]
+              setMessages(finalList)
+              persistMessages(finalList)
+            } else {
+              const noSteps: ChatMessage = {
+                id: makeId(),
+                role: "assistant",
+                content: `抱歉，我在上次回复中没有找到明确的行动步骤。你可以直接告诉我具体要添加哪些待办事项。`,
+                timestamp: now(),
+              }
+              const finalList = [...working, noSteps]
+              setMessages(finalList)
+              persistMessages(finalList)
+            }
           }
         }
       } catch (e: any) {
@@ -395,7 +522,10 @@ export function useAiChat() {
       persistMessages,
       detectAddTodo,
       extractActionSteps,
+      extractSpecificTodos,
       addTodos,
+      pendingTodos,
+      setPendingTodos,
       router,
     ],
   )
