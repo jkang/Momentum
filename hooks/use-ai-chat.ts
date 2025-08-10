@@ -337,7 +337,7 @@ export function useAiChat() {
     }
 
     // 检测一般加到待办意图
-    const generalKeywords = ["帮我加到待办", "添加到待办", "加入待办", "放到待办", "保存到待办", "记录到待办"]
+    const generalKeywords = ["加到待办", "帮我加到待办", "添加到待办", "加入待办", "放到待办", "保存到待办", "记录到待办", "加到todolist", "加到todo"]
     if (generalKeywords.some(k => userLower.includes(k))) {
       return { type: 'add' }
     }
