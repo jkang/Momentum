@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Memory } from "@/lib/memory"
+import { extractReasonsFromText, extractCommitStepsFromAi } from "@/lib/memory-extract"
+import { shouldSummarize, buildSummarySystem } from "@/lib/memory-summarize"
 
-export type Role = "user" | "assistant"
+export type Role = "user" | "assistant" | "system"
 
 export interface QuickReply {
   text: string
@@ -684,9 +687,24 @@ export function useAiChat() {
       try {
         abortRef.current = new AbortController()
 
+        // 检查是否需要对话摘要
+        let messagesToSend = nextMessages
+        if (shouldSummarize(nextMessages)) {
+          const summary = buildSummarySystem(nextMessages.slice(0, -10)) // 保留最近10条消息
+          const recentMessages = nextMessages.slice(-10)
+          messagesToSend = [
+            { id: makeId(), role: "system" as const, content: summary.content, timestamp: now() },
+            ...recentMessages
+          ]
+        }
+
+        // 构建记忆前缀（基于用户输入检索相关记忆）
+        const memoryPreface = Memory.buildPreface(content)
+
         const apiMessages = [
           ...(options?.hiddenSystem ? [{ role: "system", content: options.hiddenSystem }] : []),
-          ...nextMessages.map((m) => ({ role: m.role, content: m.content })),
+          ...(memoryPreface ? [{ role: "system", content: memoryPreface }] : []),
+          ...messagesToSend.map((m) => ({ role: m.role, content: m.content })),
         ]
 
         // 如果有教程推荐，添加到系统提示中
@@ -755,6 +773,23 @@ export function useAiChat() {
           working = [...nextMessages, { ...assistantMsg }]
           setMessages(working)
           persistMessages(working)
+        }
+
+        // 提取并保存记忆（从用户输入和AI回复中）
+        try {
+          // 从用户输入中提取拖延原因
+          const reasons = extractReasonsFromText(content)
+          if (reasons.length > 0) {
+            Memory.addReasons(reasons)
+          }
+
+          // 从AI回复中提取行动步骤/承诺
+          const commitSteps = extractCommitStepsFromAi(assistantMsg.content)
+          if (commitSteps.length > 0) {
+            Memory.addCommitment(commitSteps)
+          }
+        } catch (error) {
+          console.warn('Failed to extract memory:', error)
         }
 
         // 处理待办相关意图
