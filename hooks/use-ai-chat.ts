@@ -501,6 +501,12 @@ export function useAiChat() {
   }
 
 
+  // 清理文本内容，移除选项标记
+  const cleanContentFromOptions = useCallback((content: string): string => {
+    // 移除所有【】标记
+    return content.replace(/【[^】]+】/g, '').trim()
+  }, [])
+
   // 解析AI回复中的选项标记，生成快捷回复（不足时按阶段兜底）
   const parseQuickReplies = useCallback((content: string): QuickReply[] => {
     const optionRegex = /【([^】]+)】/g
@@ -742,6 +748,9 @@ export function useAiChat() {
           // 生成快捷回复（不足时按阶段兜底）
           const quickReplies = parseQuickReplies(assistantMsg.content)
           assistantMsg.quickReplies = quickReplies
+
+          // 清理文本内容，移除选项标记
+          assistantMsg.content = cleanContentFromOptions(assistantMsg.content)
 
           working = [...nextMessages, { ...assistantMsg }]
           setMessages(working)
