@@ -260,7 +260,7 @@ export default function TodoListPage() {
                       className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 border-momentum-sage-light hover:border-momentum-coral flex items-center justify-center group-hover:scale-110 transition-all"
                     >
                       {t.completed && (
-                        <div className="w-3 h-3 rounded-full bg-momentum-coral"></div>
+                        <div className="w-1 h-1 rounded-full bg-momentum-coral"></div>
                       )}
                     </button>
 
@@ -325,7 +325,7 @@ export default function TodoListPage() {
                       onClick={() => toggleTodo(t.id, !t.completed)}
                       className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 border-momentum-coral bg-momentum-coral flex items-center justify-center group-hover:scale-110 transition-all"
                     >
-                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                      <div className="w-1 h-1 rounded-full bg-white"></div>
                     </button>
 
                     <div className="flex-1 min-w-0">
