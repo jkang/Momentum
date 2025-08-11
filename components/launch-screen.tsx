@@ -50,6 +50,8 @@ export default function LaunchScreen({
               alt="Momentum Logo"
               width={48}
               height={48}
+              priority
+              sizes="(max-width: 768px) 48px, 48px"
               className="w-12 h-12 object-contain"
             />
           </div>
@@ -76,6 +78,8 @@ export default function LaunchScreen({
               alt="Momentum Logo"
               width={256}
               height={256}
+              priority
+              sizes="(max-width: 768px) 224px, 256px"
               className="w-full h-full object-contain"
             />
           </div>

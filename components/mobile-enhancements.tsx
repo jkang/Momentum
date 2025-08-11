@@ -27,6 +27,12 @@ export function PullToRefresh({ onRefresh, children, threshold = 80 }: PullToRef
     const handleTouchMove = (e: TouchEvent) => {
       if (scrollTop > 0) return // 不在顶部时不触发
 
+      // 检查是否点击在可点击元素上，避免拦截按钮点击
+      const target = e.target as Element
+      if (target.closest('a, button, [role="button"], .quick-select-card, .touch-feedback')) {
+        return // 不拦截按钮和链接点击
+      }
+
       const touchY = e.touches[0].clientY
       const distance = touchY - touchStartY
 

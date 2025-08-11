@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import AppHeader from "@/components/app-header"
 import BottomNavigation from "@/components/bottom-navigation"
@@ -216,7 +217,15 @@ export default function HomePage() {
         {/* 欢迎区 */}
         <section className="text-center">
           <div className="w-20 h-20 mx-auto mb-4 rounded-lg overflow-hidden border border-momentum-sage-light-20 bg-white">
-            <img src="/images/logo-momentum.png" alt="Momentum Logo" width={80} height={80} />
+            <Image
+              src="/images/logo-momentum.png"
+              alt="Momentum Logo"
+              width={80}
+              height={80}
+              priority
+              sizes="(max-width: 768px) 80px, 80px"
+              className="w-full h-full object-contain"
+            />
           </div>
           <h2 className="text-2xl font-semibold text-momentum-forest mb-2">你好！我是小M</h2>
           <p className="text-momentum-muted max-w-md mx-auto leading-relaxed text-sm">
