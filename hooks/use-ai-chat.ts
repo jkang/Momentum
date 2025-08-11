@@ -64,6 +64,8 @@ const convertStringArrayToTodos = (items: string[], defaultDate?: string): TodoW
 const SESSIONS_KEY = "momentum-sessions-v1"
 const CURRENT_SESSION_KEY = "momentum-current-session-v1"
 const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000 // 7 天过期
+const MAX_MESSAGES = 25 // 限制消息数量，提升移动端性能
+const MAX_SESSIONS = 3 // 只保留最近的3次对话历史
 
 function now() {
   return Date.now()
@@ -73,12 +75,22 @@ function readSessions(): ChatSession[] {
   try {
     const raw = localStorage.getItem(SESSIONS_KEY)
     const list: ChatSession[] = raw ? JSON.parse(raw) : []
-    // 过期清理
+
+    // 过期清理和会话数量限制
     const cutoff = now() - EXPIRY_MS
-    const filtered = list.filter((s) => s.updatedAt >= cutoff)
-    if (filtered.length !== list.length) {
+    let filtered = list.filter((s) => s.updatedAt >= cutoff)
+
+    // 按更新时间排序，只保留最近的3次对话
+    filtered = filtered
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, MAX_SESSIONS)
+
+    // 如果数据有变化，更新localStorage
+    if (filtered.length !== list.length ||
+        JSON.stringify(filtered) !== JSON.stringify(list)) {
       localStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered))
     }
+
     return filtered
   } catch {
     return []
@@ -86,11 +98,26 @@ function readSessions(): ChatSession[] {
 }
 
 function writeSessions(sessions: ChatSession[]) {
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
+  // 按更新时间排序，保留最近的3次对话
+  const sortedSessions = sessions
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, MAX_SESSIONS)
+
+  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sortedSessions))
 }
 
 function makeId() {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
+}
+
+// 限制消息数量，保持性能
+function limitMessages(messages: ChatMessage[]): ChatMessage[] {
+  if (messages.length <= MAX_MESSAGES) return messages
+
+  // 保留第一条消息（通常是开场白）和最新的消息
+  const firstMessage = messages[0]
+  const recentMessages = messages.slice(-(MAX_MESSAGES - 1))
+  return [firstMessage, ...recentMessages]
 }
 
 // 当前会话管理
@@ -146,7 +173,7 @@ export function useAiChat() {
       if (sessions.length > 0) {
         const latestSession = sessions[0] // sessions已按updatedAt排序
         updateCurrentSessionId(latestSession.id)
-        setMessages(latestSession.messages)
+        setMessages(limitMessages(latestSession.messages))
       } else {
         updateCurrentSessionId(null)
         setMessages([])
@@ -160,13 +187,13 @@ export function useAiChat() {
 
     if (session) {
       updateCurrentSessionId(session.id)
-      setMessages(session.messages)
+      setMessages(limitMessages(session.messages))
     } else {
       // 会话不存在，清除并加载最新会话
       const latestSession = sessions[0]
       if (latestSession) {
         updateCurrentSessionId(latestSession.id)
-        setMessages(latestSession.messages)
+        setMessages(limitMessages(latestSession.messages))
       } else {
         updateCurrentSessionId(null)
         setMessages([])
@@ -186,7 +213,7 @@ export function useAiChat() {
     const session = sessions.find((s) => s.id === sessionId)
     if (session) {
       updateCurrentSessionId(sessionId)
-      setMessages(session.messages)
+      setMessages(limitMessages(session.messages))
     }
   }, [updateCurrentSessionId])
 
@@ -236,7 +263,7 @@ export function useAiChat() {
         if (sessions.length > 0) {
           const latestSession = sessions.sort((a, b) => b.updatedAt - a.updatedAt)[0]
           updateCurrentSessionId(latestSession.id)
-          setMessages(latestSession.messages)
+          setMessages(limitMessages(latestSession.messages))
         } else {
           updateCurrentSessionId(null)
           setMessages([])
@@ -647,7 +674,7 @@ export function useAiChat() {
           timestamp: now(),
         }
 
-        const newMessages = [...messages, userMsg, confirmMsg]
+        const newMessages = limitMessages([...messages, userMsg, confirmMsg])
         setMessages(newMessages)
         persistMessages(newMessages)
 
@@ -662,7 +689,7 @@ export function useAiChat() {
           timestamp: now(),
         }
 
-        const newMessages = [...messages, userMsg, noTasksMsg]
+        const newMessages = limitMessages([...messages, userMsg, noTasksMsg])
         setMessages(newMessages)
         persistMessages(newMessages)
       }
@@ -686,7 +713,7 @@ export function useAiChat() {
         timestamp: now(),
       }
 
-      const newMessages = [...messages, userMsg, cancelMsg]
+      const newMessages = limitMessages([...messages, userMsg, cancelMsg])
       setMessages(newMessages)
       persistMessages(newMessages)
     }
@@ -730,7 +757,10 @@ export function useAiChat() {
         content: cleanContent.trim(),
         timestamp: now(),
       }
-      const nextMessages = [...messages, userMsg]
+
+      // 限制消息数量，提升移动端性能
+      const nextMessages = limitMessages([...messages, userMsg])
+
       setMessages(nextMessages)
       persistMessages(nextMessages)
 
@@ -797,7 +827,7 @@ export function useAiChat() {
         }
 
         // 关键修复：以 nextMessages 为起点
-        let working = [...nextMessages, assistantMsg]
+        let working = limitMessages([...nextMessages, assistantMsg])
         setMessages(working)
 
         const decoder = new TextDecoder()
@@ -823,7 +853,7 @@ export function useAiChat() {
                   // 流式过程中，展示给用户的内容始终为“去掉【】标签”的版本
                   assistantMsg.content = cleanContentFromOptions(rawContent)
 
-                  working = [...nextMessages, { ...assistantMsg }]
+                  working = limitMessages([...nextMessages, { ...assistantMsg }])
                   setMessages(working)
                   persistMessages(working)
                 }
@@ -841,7 +871,7 @@ export function useAiChat() {
           // 正文已在流式过程中持续清理过，这里确保最终一次再清理
           assistantMsg.content = cleanContentFromOptions(rawContent || assistantMsg.content)
 
-          working = [...nextMessages, { ...assistantMsg }]
+          working = limitMessages([...nextMessages, { ...assistantMsg }])
           setMessages(working)
           persistMessages(working)
         }
@@ -885,7 +915,7 @@ export function useAiChat() {
                 content: `✅ ${added} 条 todolist 已经添加，3秒后跳转到待办页面...`,
                 timestamp: now(),
               }
-              const finalList = [...working, confirm]
+              const finalList = limitMessages([...working, confirm])
               setMessages(finalList)
               persistMessages(finalList)
               setTimeout(() => router.push("/todolist"), 3000)
@@ -901,7 +931,7 @@ export function useAiChat() {
                 content: `✅ ${added} 条 todolist 已经添加，3秒后跳转到待办页面...`,
                 timestamp: now(),
               }
-              const finalList = [...working, confirm]
+              const finalList = limitMessages([...working, confirm])
               setMessages(finalList)
               persistMessages(finalList)
               setTimeout(() => router.push("/todolist"), 3000)
@@ -912,7 +942,7 @@ export function useAiChat() {
                 content: `抱歉，我在上次回复中没有找到明确的项目。你可以直接告诉我具体要添加哪些待办事项。`,
                 timestamp: now(),
               }
-              const finalList = [...working, noItems]
+              const finalList = limitMessages([...working, noItems])
               setMessages(finalList)
               persistMessages(finalList)
             }
@@ -935,7 +965,7 @@ export function useAiChat() {
                 content: `✅ ${added} 条 todolist 已经添加，3秒后跳转到待办页面...`,
                 timestamp: now(),
               }
-              const finalList = [...working, confirm]
+              const finalList = limitMessages([...working, confirm])
               setMessages(finalList)
               persistMessages(finalList)
               setTimeout(() => router.push("/todolist"), 3000)
@@ -946,7 +976,7 @@ export function useAiChat() {
                 content: `抱歉，我在上次回复中没有找到明确的行动步骤。你可以直接告诉我具体要添加哪些待办事项。`,
                 timestamp: now(),
               }
-              const finalList = [...working, noSteps]
+              const finalList = limitMessages([...working, noSteps])
               setMessages(finalList)
               persistMessages(finalList)
             }

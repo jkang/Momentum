@@ -22,6 +22,7 @@ interface ChatSession {
 
 const SESSIONS_KEY = "momentum-sessions-v1"
 const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000
+const MAX_SESSIONS = 3 // 只保留最近的3次对话历史
 
 export default function HistoryPage() {
   const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -31,8 +32,18 @@ export default function HistoryPage() {
       const raw = localStorage.getItem(SESSIONS_KEY)
       const all: ChatSession[] = raw ? JSON.parse(raw) : []
       const cutoff = Date.now() - EXPIRY_MS
-      const filtered = all.filter((s) => s.updatedAt >= cutoff).sort((a, b) => b.updatedAt - a.updatedAt)
-      if (filtered.length !== all.length) localStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered))
+
+      // 过期清理和会话数量限制
+      let filtered = all.filter((s) => s.updatedAt >= cutoff)
+      filtered = filtered
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, MAX_SESSIONS) // 只保留最近3次对话
+
+      // 如果数据有变化，更新localStorage
+      if (filtered.length !== all.length) {
+        localStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered))
+      }
+
       setSessions(filtered)
     } catch {
       setSessions([])

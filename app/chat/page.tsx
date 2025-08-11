@@ -39,6 +39,32 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, isLoading])
 
+  // 一次性清理：限制现有会话数量和消息数量
+  useEffect(() => {
+    const hasCleanedUp = localStorage.getItem("momentum-storage-cleaned-v2")
+    if (!hasCleanedUp) {
+      try {
+        const sessionsRaw = localStorage.getItem("momentum-sessions-v1")
+        if (sessionsRaw) {
+          const sessions = JSON.parse(sessionsRaw)
+          // 按更新时间排序，只保留最近3次对话
+          const recentSessions = sessions
+            .sort((a: any, b: any) => b.updatedAt - a.updatedAt)
+            .slice(0, 3)
+            .map((session: any) => ({
+              ...session,
+              messages: session.messages?.slice(-25) || [] // 每个会话只保留最新25条消息
+            }))
+          localStorage.setItem("momentum-sessions-v1", JSON.stringify(recentSessions))
+        }
+        localStorage.setItem("momentum-storage-cleaned-v2", "true")
+        console.log("✅ 已清理localStorage，只保留最近3次对话，每次对话最多25条消息")
+      } catch (error) {
+        console.log("清理历史数据时出错:", error)
+      }
+    }
+  }, [])
+
   // 首次打开 /chat 时的行为控制：
   // 1) 若来自首页携带 autostart=1&text=...，则立即以该内容开聊（不显示开场白）
   // 2) 清理URL参数，保持URL简洁
