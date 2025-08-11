@@ -305,6 +305,41 @@
     }
   }
 
+  /* Quick Reply 按钮样式 */
+  .quick-reply-button {
+    /* 基础样式 */
+    @apply border-momentum-sage text-momentum-sage hover:bg-momentum-sage hover:text-white rounded-md flex-shrink-0 transition-all duration-200;
+
+    /* PC 端样式 */
+    font-size: 12px;
+    padding: 6px 12px;
+    height: 32px;
+    min-height: 32px;
+    line-height: 1.2;
+  }
+
+  /* 移动端优化 */
+  @media (max-width: 768px) {
+    .quick-reply-button {
+      font-size: 12px;
+      padding: 6px 12px;
+      height: 32px;
+      min-height: 32px;
+      min-width: 44px; /* 确保触摸目标足够大 */
+      line-height: 1.2;
+    }
+  }
+
+  /* 平板端样式 */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .quick-reply-button {
+      font-size: 13px;
+      padding: 7px 14px;
+      height: 36px;
+      min-height: 36px;
+    }
+  }
+
   .quick-select-icon {
     @apply w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm;
   }

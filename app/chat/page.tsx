@@ -198,9 +198,8 @@ export default function ChatPage() {
                         <Button
                           key={index}
                           variant="outline"
-                          size="sm"
                           onClick={() => handleQuickReply(reply.action, reply.text)}
-                          className="text-[10px] px-1 py-0.5 h-1.5 border-momentum-sage text-momentum-sage hover:bg-momentum-sage hover:text-white rounded-md flex-shrink-0"
+                          className="quick-reply-button"
                         >
                           {reply.text}
                         </Button>
