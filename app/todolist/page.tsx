@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,12 +21,7 @@ type Todo = {
   updatedAt: string
 }
 
-type ParsedTodo = {
-  title: string
-  description?: string
-  deadlineDate?: string
-  note?: string
-}
+
 
 const STORAGE_KEY = "momentum-todos"
 
@@ -96,7 +90,6 @@ export default function TodoListPage() {
   const [showSmartAdd, setShowSmartAdd] = useState(false)
   const [smartText, setSmartText] = useState("")
   const [isParsingTodos, setIsParsingTodos] = useState(false)
-  const [parsedTodos, setParsedTodos] = useState<ParsedTodo[]>([])
   const [parseError, setParseError] = useState<string | null>(null)
 
   // 首次加载
@@ -167,7 +160,47 @@ export default function TodoListPage() {
       }
 
       const data = await response.json()
-      setParsedTodos(data.todos || [])
+      const parsedTodos = data.todos || []
+
+      // 直接添加解析出的待办事项，不需要用户确认
+      if (parsedTodos.length > 0) {
+        const validTodos = parsedTodos.filter((todo: any) => todo.title.trim().length > 0)
+        if (validTodos.length > 0) {
+          const now = new Date().toISOString()
+          const newTodos = validTodos.map((parsed: any) => {
+            const item: Todo = {
+              id: crypto.randomUUID(),
+              title: parsed.title.trim(),
+              description: parsed.description?.trim() || undefined,
+              completed: false,
+              deadlineDate: parsed.deadlineDate,
+              note: parsed.note?.trim() || undefined,
+              createdAt: now,
+              updatedAt: now,
+            }
+            return item
+          })
+
+          const next = [...newTodos, ...todos]
+          setTodos(next)
+          saveTodos(next)
+
+          // 清理状态
+          setSmartText("")
+          setShowSmartAdd(false)
+          setParseError(null)
+
+          // 显示成功消息
+          setCelebrationMessage(`🎉 成功添加 ${newTodos.length} 个待办事项！`)
+          setTimeout(() => {
+            setCelebrationMessage(null)
+          }, 3000)
+        } else {
+          setParseError("没有有效的待办事项可以添加")
+        }
+      } else {
+        setParseError("未能解析出待办事项，请检查输入内容")
+      }
     } catch (error) {
       console.error("Parse todos error:", error)
       setParseError("解析失败，请检查网络连接或稍后重试")
@@ -176,48 +209,7 @@ export default function TodoListPage() {
     }
   }
 
-  // 批量添加解析出的待办事项
-  function addParsedTodos() {
-    if (parsedTodos.length === 0) return
 
-    // 过滤掉标题为空的待办事项
-    const validTodos = parsedTodos.filter(todo => todo.title.trim().length > 0)
-    if (validTodos.length === 0) {
-      setParseError("没有有效的待办事项可以添加")
-      return
-    }
-
-    const now = new Date().toISOString()
-    const newTodos = validTodos.map((parsed) => {
-      const item: Todo = {
-        id: crypto.randomUUID(),
-        title: parsed.title.trim(),
-        description: parsed.description?.trim() || undefined,
-        completed: false,
-        deadlineDate: parsed.deadlineDate,
-        note: parsed.note?.trim() || undefined,
-        createdAt: now,
-        updatedAt: now,
-      }
-      return item
-    })
-
-    const next = [...newTodos, ...todos]
-    setTodos(next)
-    saveTodos(next)
-
-    // 清理状态
-    setSmartText("")
-    setParsedTodos([])
-    setShowSmartAdd(false)
-    setParseError(null)
-
-    // 显示成功消息
-    setCelebrationMessage(`🎉 成功添加 ${newTodos.length} 个待办事项！`)
-    setTimeout(() => {
-      setCelebrationMessage(null)
-    }, 3000)
-  }
 
   // 检查是否需要渲染描述：标题和描述完全一致时不渲染
   function shouldShowDescription(title?: string, desc?: string) {
@@ -277,9 +269,8 @@ export default function TodoListPage() {
                   value={smartText}
                   onChange={(e) => {
                     setSmartText(e.target.value)
-                    // 清除之前的错误和解析结果
+                    // 清除之前的错误
                     if (parseError) setParseError(null)
-                    if (parsedTodos.length > 0) setParsedTodos([])
                   }}
                   onKeyDown={(e) => {
                     // Ctrl/Cmd + Enter 快速解析
@@ -313,7 +304,6 @@ export default function TodoListPage() {
                   onClick={() => {
                     setShowSmartAdd(false)
                     setSmartText("")
-                    setParsedTodos([])
                     setParseError(null)
                   }}
                 >
@@ -339,101 +329,7 @@ export default function TodoListPage() {
           </Card>
         )}
 
-        {parsedTodos.length > 0 && (
-          <Card className="mb-6 border-momentum-sage-light/30 bg-white">
-            <CardHeader className="py-4 border-b border-momentum-sage-light/20">
-              <CardTitle className="text-sm font-medium text-momentum-forest">
-                解析结果（{parsedTodos.length} 个待办事项）
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              <div className="space-y-3">
-                {parsedTodos.map((todo, index) => (
-                  <div key={index} className="p-3 border border-momentum-sage-light/30 rounded-lg bg-momentum-sage-light/5">
-                    <div className="grid gap-2">
-                      <div className="grid gap-1">
-                        <label className="text-xs text-momentum-sage-dark">标题</label>
-                        <Input
-                          value={todo.title}
-                          onChange={(e) => {
-                            const updated = [...parsedTodos]
-                            updated[index] = { ...updated[index], title: e.target.value }
-                            setParsedTodos(updated)
-                          }}
-                          className="h-8 text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
-                        />
-                      </div>
-                      {todo.description && (
-                        <div className="grid gap-1">
-                          <label className="text-xs text-momentum-sage-dark">描述</label>
-                          <Textarea
-                            value={todo.description}
-                            onChange={(e) => {
-                              const updated = [...parsedTodos]
-                              updated[index] = { ...updated[index], description: e.target.value }
-                              setParsedTodos(updated)
-                            }}
-                            className="min-h-[60px] text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
-                          />
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="grid gap-1">
-                          <label className="text-xs text-momentum-sage-dark">截止日期</label>
-                          <Input
-                            type="date"
-                            value={todo.deadlineDate || ""}
-                            onChange={(e) => {
-                              const updated = [...parsedTodos]
-                              updated[index] = { ...updated[index], deadlineDate: e.target.value || undefined }
-                              setParsedTodos(updated)
-                            }}
-                            className="h-8 text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2 text-xs border-red-200 text-red-600 hover:bg-red-50"
-                            onClick={() => {
-                              const updated = parsedTodos.filter((_, i) => i !== index)
-                              setParsedTodos(updated)
-                            }}
-                          >
-                            删除
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-momentum-sage-light/20">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 text-sm border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10"
-                  onClick={() => {
-                    setParsedTodos([])
-                    setSmartText("")
-                  }}
-                >
-                  重新解析
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-8 px-3 text-sm bg-momentum-coral hover:bg-momentum-coral-dark text-white"
-                  onClick={addParsedTodos}
-                  disabled={parsedTodos.length === 0}
-                >
-                  添加到待办（{parsedTodos.length}）
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <section className="space-y-6">
           <div>

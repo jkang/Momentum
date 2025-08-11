@@ -737,6 +737,7 @@ export function useAiChat() {
 
         const decoder = new TextDecoder()
         let buf = ""
+        let rawContent = ""
 
         while (true) {
           const { done, value } = await reader.read()
@@ -751,7 +752,12 @@ export function useAiChat() {
               try {
                 const parsed = JSON.parse(data)
                 if (parsed.content) {
-                  assistantMsg.content += parsed.content
+                  // 累积原始内容
+                  rawContent += parsed.content
+
+                  // 流式过程中，展示给用户的内容始终为“去掉【】标签”的版本
+                  assistantMsg.content = cleanContentFromOptions(rawContent)
+
                   working = [...nextMessages, { ...assistantMsg }]
                   setMessages(working)
                   persistMessages(working)
@@ -761,14 +767,14 @@ export function useAiChat() {
           }
         }
 
-        // 解析AI回复中的选项，自动生成快捷回复
+        // 解析AI回复中的选项，自动生成快捷回复（在流式完成后）
         if (assistantMsg.content && !todoIntent) {
-          // 生成快捷回复（不足时按阶段兜底）
-          const quickReplies = parseQuickReplies(assistantMsg.content)
+          // 用原始内容提取选项
+          const quickReplies = parseQuickReplies(rawContent || assistantMsg.content)
           assistantMsg.quickReplies = quickReplies
 
-          // 清理文本内容，移除选项标记
-          assistantMsg.content = cleanContentFromOptions(assistantMsg.content)
+          // 正文已在流式过程中持续清理过，这里确保最终一次再清理
+          assistantMsg.content = cleanContentFromOptions(rawContent || assistantMsg.content)
 
           working = [...nextMessages, { ...assistantMsg }]
           setMessages(working)
