@@ -768,7 +768,7 @@ export function useAiChat() {
         }
 
         // 解析AI回复中的选项，自动生成快捷回复（在流式完成后）
-        if (assistantMsg.content && !todoIntent) {
+        if (assistantMsg.content && todoIntent.type === 'none') {
           // 用原始内容提取选项
           const quickReplies = parseQuickReplies(rawContent || assistantMsg.content)
           assistantMsg.quickReplies = quickReplies
