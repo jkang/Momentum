@@ -29,6 +29,37 @@ export interface ChatSession {
   messages: ChatMessage[]
 }
 
+// 带有日期信息的待办项接口
+interface TodoWithDate {
+  title: string
+  description?: string
+  deadlineDate?: string // YYYY-MM-DD格式
+}
+
+// 日期工具函数
+const getTodayDate = (): string => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today.toISOString().slice(0, 10)
+}
+
+const getTomorrowDate = (): string => {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(0, 0, 0, 0)
+  return tomorrow.toISOString().slice(0, 10)
+}
+
+// 将字符串数组转换为TodoWithDate数组的辅助函数
+const convertStringArrayToTodos = (items: string[], defaultDate?: string): TodoWithDate[] => {
+  const date = defaultDate || getTomorrowDate()
+  return items.map(item => ({
+    title: item.length > 50 ? `${item.slice(0, 50)}...` : item,
+    description: item,
+    deadlineDate: date
+  }))
+}
+
 const SESSIONS_KEY = "momentum-sessions-v1"
 const CURRENT_SESSION_KEY = "momentum-current-session-v1"
 const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000 // 7 天过期
@@ -286,7 +317,7 @@ export function useAiChat() {
   }, [])
 
   // 根据用户意图，从AI回复中提取特定待办事项
-  const extractSpecificTodos = useCallback((text: string, userMessage: string): { type: 'specific'; items: string[] } | { type: 'none' } => {
+  const extractSpecificTodos = useCallback((text: string, userMessage: string): { type: 'specific'; items: TodoWithDate[] } | { type: 'none' } => {
     const userLower = userMessage.toLowerCase();
     const allKeywords = ["都添加", "全部添加", "所有的", "全部的", "今日和明日", "今天和明天"];
     const isAddAll = allKeywords.some(k => userLower.includes(k));
@@ -297,8 +328,19 @@ export function useAiChat() {
     const wantsToday = todayKeywords.some(kw => userLower.includes(kw));
     const wantsTomorrow = tomorrowKeywords.some(kw => userLower.includes(kw));
 
-    const extractAllItems = (text: string) => {
-        const items: string[] = [];
+    // 根据用户消息确定默认日期
+    let defaultDate: string;
+    if (wantsToday && !wantsTomorrow) {
+      defaultDate = getTodayDate();
+    } else if (wantsTomorrow && !wantsToday) {
+      defaultDate = getTomorrowDate();
+    } else {
+      // 如果没有明确指定或者同时指定了今天和明天，默认为明天
+      defaultDate = getTomorrowDate();
+    }
+
+    const extractAllItems = (text: string): TodoWithDate[] => {
+        const items: TodoWithDate[] = [];
 
         // 匹配多种格式的列表项
         const patterns = [
@@ -316,14 +358,21 @@ export function useAiChat() {
             if (item.length > 3 && item.length < 80) {
               // 过滤掉标题和描述性文字
               if (!/^(今日|明日|本周|下周|步骤|提示|小技巧|需要|时间|剩余时间|建议设定|约\d+小时)/.test(item)) {
-                items.push(item);
+                items.push({
+                  title: item.length > 50 ? `${item.slice(0, 50)}...` : item,
+                  description: item,
+                  deadlineDate: defaultDate
+                });
               }
             }
           }
         });
 
-        // 去重
-        return [...new Set(items)];
+        // 去重（基于title）
+        const uniqueItems = items.filter((item, index, self) =>
+          index === self.findIndex(t => t.title === item.title)
+        );
+        return uniqueItems;
     };
 
     if (isAddAll || (wantsToday && wantsTomorrow)) {
@@ -334,8 +383,9 @@ export function useAiChat() {
     }
 
     const lines = text.split('\n');
-    let items: string[] = [];
+    let items: TodoWithDate[] = [];
     let collectingFor: 'today' | 'tomorrow' | 'none' = 'none';
+    let currentDate = defaultDate;
 
     for (const line of lines) {
         const isTodayHeader = todayKeywords.some(kw => line.includes(kw) && !/^\s*(\d+\.|[-•]|\[\s*\])/.test(line));
@@ -343,10 +393,12 @@ export function useAiChat() {
 
         if (isTodayHeader) {
             collectingFor = 'today';
+            currentDate = getTodayDate();
             continue;
         }
         if (isTomorrowHeader) {
             collectingFor = 'tomorrow';
+            currentDate = getTomorrowDate();
             continue;
         }
 
@@ -354,6 +406,7 @@ export function useAiChat() {
         if (!isListItem) {
             if (line.trim() !== '') {
                  collectingFor = 'none';
+                 currentDate = defaultDate;
             }
             continue;
         }
@@ -361,7 +414,11 @@ export function useAiChat() {
         if ((wantsToday && collectingFor === 'today') || (wantsTomorrow && collectingFor === 'tomorrow')) {
             const itemText = line.replace(/^\s*(?:\d+\.|[-•]|\[\s*\])\s*/, '').trim();
             if (itemText) {
-                items.push(itemText);
+                items.push({
+                  title: itemText.length > 50 ? `${itemText.slice(0, 50)}...` : itemText,
+                  description: itemText,
+                  deadlineDate: currentDate
+                });
             }
         }
     }
@@ -413,16 +470,18 @@ export function useAiChat() {
   }, [])
 
   // 添加到待办（localStorage: momentum-todos）
-  const addTodos = useCallback((steps: string[]) => {
+  const addTodos = useCallback((todos: TodoWithDate[]) => {
     try {
       const existing = JSON.parse(localStorage.getItem("momentum-todos") || "[]")
       // 增加支持更多待办项，从6个提高到10个
-      const newOnes = steps.slice(0, 10).map((s: string) => ({
+      const newOnes = todos.slice(0, 10).map((todo: TodoWithDate) => ({
         id: makeId(),
-        title: s.length > 50 ? `${s.slice(0, 50)}...` : s,
-        description: s,
+        title: todo.title,
+        description: todo.description || todo.title,
         completed: false,
+        deadlineDate: todo.deadlineDate,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }))
       localStorage.setItem("momentum-todos", JSON.stringify([...existing, ...newOnes]))
       return newOnes.length
@@ -551,7 +610,7 @@ export function useAiChat() {
 
       // 直接从AI的最近1条回复中提取todolist
       const lastAiMessage = [...messages].reverse().find((m) => m.role === "assistant")
-      let todosToAdd: string[] = []
+      let todosToAdd: TodoWithDate[] = []
 
       if (lastAiMessage) {
         // 使用智能提取方法获取待办项
@@ -568,7 +627,8 @@ export function useAiChat() {
           if (specificResult.type === 'specific' && specificResult.items.length > 0) {
             todosToAdd = specificResult.items
           } else {
-            todosToAdd = extractActionSteps(lastAiMessage.content)
+            const actionSteps = extractActionSteps(lastAiMessage.content)
+            todosToAdd = convertStringArrayToTodos(actionSteps)
           }
         }
       }
@@ -802,12 +862,13 @@ export function useAiChat() {
         if (todoIntent.type !== 'none' && lastAi) {
           if (todoIntent.type === 'confirm') {
             // 用户确认添加待办 - 直接从AI最近回复中提取
-            let todosToAdd: string[] = []
+            let todosToAdd: TodoWithDate[] = []
             const specificResult = extractSpecificTodos(lastAi, "全部添加")
             if (specificResult.type === 'specific' && specificResult.items.length > 0) {
               todosToAdd = specificResult.items
             } else {
-              todosToAdd = extractActionSteps(lastAi)
+              const actionSteps = extractActionSteps(lastAi)
+              todosToAdd = convertStringArrayToTodos(actionSteps)
             }
 
             if (todosToAdd.length > 0) {
@@ -852,12 +913,13 @@ export function useAiChat() {
             }
           } else if (todoIntent.type === 'action_steps') {
             // 一般的加到待办意图 - 直接添加
-            let todosToAdd: string[] = []
+            let todosToAdd: TodoWithDate[] = []
             const specificResult = extractSpecificTodos(lastAi, "全部添加")
             if (specificResult.type === 'specific' && specificResult.items.length > 0) {
               todosToAdd = specificResult.items
             } else {
-              todosToAdd = extractActionSteps(lastAi)
+              const actionSteps = extractActionSteps(lastAi)
+              todosToAdd = convertStringArrayToTodos(actionSteps)
             }
 
             if (todosToAdd.length > 0) {
