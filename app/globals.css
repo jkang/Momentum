@@ -239,20 +239,23 @@
 
   /* Card */
   .momentum-card {
-    @apply bg-white p-4 shadow-sm border;
+    background-color: white;
+    padding: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(168, 196, 169, 0.2);
     border-radius: 12px;
-    border-color: rgba(168, 196, 169, 0.2);
   }
 
   /* Buttons */
   .momentum-button-primary {
-    /* 仅应用 Tailwind 内置工具类 */
-    @apply font-medium transition-colors text-white;
-
-    /* 自定义圆角与阴影用原生 CSS 实现，避免 @apply 自定义类 */
+    font-weight: 500;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+    color: white;
     border-radius: 12px;
     background-color: var(--momentum-coral);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* 原 shadow-momentum-soft 的等效阴影 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
   .momentum-button-primary:hover {
@@ -260,7 +263,10 @@
   }
 
   .momentum-button-secondary {
-    @apply font-medium transition-colors;
+    font-weight: 500;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
     border-radius: 12px;
     color: var(--momentum-sage-dark);
     background-color: rgba(168, 196, 169, 0.2);
@@ -271,9 +277,14 @@
 
   /* Quick select card */
   .quick-select-card {
-    @apply bg-white border p-4 cursor-pointer transition-all duration-200;
+    background-color: white;
+    border: 1px solid rgba(168, 196, 169, 0.2);
+    padding: 1rem;
+    cursor: pointer;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
     border-radius: 16px;
-    border-color: rgba(168, 196, 169, 0.2);
     min-height: 44px;
   }
   .quick-select-card:hover {
@@ -308,7 +319,13 @@
   /* Quick Reply 按钮样式 */
   .quick-reply-button {
     /* 基础样式 */
-    @apply border-momentum-sage text-momentum-sage hover:bg-momentum-sage hover:text-white rounded-md flex-shrink-0 transition-all duration-200;
+    border: 1px solid var(--momentum-sage);
+    border-radius: 0.375rem;
+    flex-shrink: 0;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+    color: var(--momentum-sage);
 
     /* PC 端样式 */
     font-size: 12px;
@@ -316,6 +333,11 @@
     height: 32px;
     min-height: 32px;
     line-height: 1.2;
+  }
+
+  .quick-reply-button:hover {
+    background-color: var(--momentum-sage);
+    color: white;
   }
 
   /* 移动端优化 */
@@ -341,7 +363,16 @@
   }
 
   .quick-select-icon {
-    @apply w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 
   /* Animation */
@@ -365,10 +396,12 @@
 /* Base styles */
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline-color: rgba(var(--ring), 0.5);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 

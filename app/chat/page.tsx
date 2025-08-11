@@ -30,6 +30,8 @@ export default function ChatPage() {
 
   const { messages, isLoading, error, sendMessage, stopGeneration, handleQuickReply } = useAiChat()
   const [inputValue, setInputValue] = useState("")
+  const [isQuickReplying, setIsQuickReplying] = useState(false)
+  const [clickingReply, setClickingReply] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const startedRef = useRef(false)
@@ -39,30 +41,33 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, isLoading])
 
-  // 一次性清理：限制现有会话数量和消息数量
+  // 异步一次性清理：限制现有会话数量和消息数量
   useEffect(() => {
-    const hasCleanedUp = localStorage.getItem("momentum-storage-cleaned-v2")
-    if (!hasCleanedUp) {
-      try {
-        const sessionsRaw = localStorage.getItem("momentum-sessions-v1")
-        if (sessionsRaw) {
-          const sessions = JSON.parse(sessionsRaw)
-          // 按更新时间排序，只保留最近3次对话
-          const recentSessions = sessions
-            .sort((a: any, b: any) => b.updatedAt - a.updatedAt)
-            .slice(0, 3)
-            .map((session: any) => ({
-              ...session,
-              messages: session.messages?.slice(-25) || [] // 每个会话只保留最新25条消息
-            }))
-          localStorage.setItem("momentum-sessions-v1", JSON.stringify(recentSessions))
+    // 使用 setTimeout 将清理操作移到下一个事件循环，避免阻塞页面渲染
+    setTimeout(() => {
+      const hasCleanedUp = localStorage.getItem("momentum-storage-cleaned-v2")
+      if (!hasCleanedUp) {
+        try {
+          const sessionsRaw = localStorage.getItem("momentum-sessions-v1")
+          if (sessionsRaw) {
+            const sessions = JSON.parse(sessionsRaw)
+            // 按更新时间排序，只保留最近3次对话
+            const recentSessions = sessions
+              .sort((a: any, b: any) => b.updatedAt - a.updatedAt)
+              .slice(0, 3)
+              .map((session: any) => ({
+                ...session,
+                messages: session.messages?.slice(-25) || [] // 每个会话只保留最新25条消息
+              }))
+            localStorage.setItem("momentum-sessions-v1", JSON.stringify(recentSessions))
+          }
+          localStorage.setItem("momentum-storage-cleaned-v2", "true")
+          console.log("✅ 已清理localStorage，只保留最近3次对话，每次对话最多25条消息")
+        } catch (error) {
+          console.log("清理历史数据时出错:", error)
         }
-        localStorage.setItem("momentum-storage-cleaned-v2", "true")
-        console.log("✅ 已清理localStorage，只保留最近3次对话，每次对话最多25条消息")
-      } catch (error) {
-        console.log("清理历史数据时出错:", error)
       }
-    }
+    }, 100) // 100ms 延迟，确保页面先渲染
   }, [])
 
   // 首次打开 /chat 时的行为控制：
@@ -93,6 +98,26 @@ export default function ChatPage() {
       router.replace("/chat", { scroll: false })
     }
   }, [searchParams, sendMessage, router])
+
+  // 防抖快捷回复处理
+  const handleQuickReplyWithFeedback = async (action: string, text: string) => {
+    if (isQuickReplying || isLoading) return
+
+    setIsQuickReplying(true)
+    setClickingReply(text)
+
+    // 添加视觉反馈延迟
+    setTimeout(async () => {
+      try {
+        await handleQuickReply(action, text)
+      } catch (error) {
+        console.error("快捷回复失败:", error)
+      } finally {
+        setIsQuickReplying(false)
+        setClickingReply(null)
+      }
+    }, 150)
+  }
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
@@ -194,16 +219,24 @@ export default function ChatPage() {
                   {/* 快捷回复按钮 */}
                   {m.role === "assistant" && m.quickReplies && m.quickReplies.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {m.quickReplies.map((reply, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          onClick={() => handleQuickReply(reply.action, reply.text)}
-                          className="quick-reply-button"
-                        >
-                          {reply.text}
-                        </Button>
-                      ))}
+                      {m.quickReplies.map((reply, index) => {
+                        const isClicking = clickingReply === reply.text
+                        return (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            onClick={() => handleQuickReplyWithFeedback(reply.action, reply.text)}
+                            disabled={isQuickReplying || isLoading}
+                            className={`quick-reply-button transition-all duration-150 ${
+                              isClicking ? 'scale-95 bg-momentum-sage-light-10' : ''
+                            } ${
+                              isQuickReplying || isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            {reply.text}
+                          </Button>
+                        )
+                      })}
                     </div>
                   )}
 
