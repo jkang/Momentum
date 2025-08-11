@@ -46,7 +46,7 @@ export default function LaunchScreen({
         >
           <div className="rounded-2xl bg-white/60 shadow-sm p-3">
             <Image
-              src="/images/logo-momentum.png"
+              src="/images/logo-momentum-small.png"
               alt="Momentum Logo"
               width={48}
               height={48}
@@ -74,7 +74,7 @@ export default function LaunchScreen({
           <div className="absolute inset-x-0 -bottom-6 mx-auto h-56 max-w-xl rounded-[48px] bg-gradient-to-t from-momentum-coral/20 to-transparent blur-2xl opacity-70" />
           <div className="w-56 h-56 md:w-64 md:h-64 flex items-center justify-center">
             <Image
-              src="/images/logo-momentum.png"
+              src="/images/logo-momentum-small.png"
               alt="Momentum Logo"
               width={256}
               height={256}

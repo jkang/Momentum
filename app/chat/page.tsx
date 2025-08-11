@@ -13,7 +13,7 @@ import AppHeader from "@/components/app-header"
 import { useAiChat } from "@/hooks/use-ai-chat"
 import { useRouter, useSearchParams } from "next/navigation"
 
-const LOGO_URL = "/images/logo-momentum.png"
+const LOGO_URL = "/images/logo-momentum-small.png"
 
 // 专家模式隐藏上下文（不会出现在 UI，随请求发送）
 const EXPERT_SYSTEM = `

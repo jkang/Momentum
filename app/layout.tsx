@@ -27,7 +27,7 @@ export default function RootLayout({
         {/* 预加载关键图片资源 */}
         <link
           rel="preload"
-          href="/images/logo-momentum.png"
+          href="/images/logo-momentum-small.png"
           as="image"
           type="image/png"
         />

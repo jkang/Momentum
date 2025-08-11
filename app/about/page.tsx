@@ -13,7 +13,7 @@ export default function AboutPage() {
         <section className="text-center">
           <div className="w-20 h-20 mx-auto mb-4 rounded-lg overflow-hidden border border-momentum-sage-light-20 bg-white">
             <Image
-              src="/images/logo-momentum.png"
+              src="/images/logo-momentum-small.png"
               alt="Momentum Logo"
               width={80}
               height={80}

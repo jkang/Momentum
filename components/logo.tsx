@@ -13,7 +13,7 @@ export function Logo({ size = 40, className = "", showText = false }: LogoProps)
     <div className={`flex items-center gap-3 ${className}`}>
       <div className="w-10 h-10 rounded-lg overflow-hidden">
         <Image
-          src="/images/logo-momentum.png"
+          src="/images/logo-momentum-small.png"
           alt="Momentum Logo"
           width={size}
           height={size}
