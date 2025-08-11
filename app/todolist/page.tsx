@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trash2, Plus, Sparkles, Loader2 } from "lucide-react"
 import BottomNavigation from "@/components/bottom-navigation"
+import AppHeader from "@/components/app-header"
 import { recordTaskCompletion } from "@/lib/celebration"
 
 type Todo = {
@@ -89,10 +90,6 @@ function autoRollOverOverdue(todos: Todo[]): Todo[] {
 
 export default function TodoListPage() {
   const [todos, setTodos] = useState<Todo[]>([])
-  const [showForm, setShowForm] = useState(false)
-  const [newTitle, setNewTitle] = useState("")
-  const [newDesc, setNewDesc] = useState("")
-  const [newDeadline, setNewDeadline] = useState<string>("")
   const [celebrationMessage, setCelebrationMessage] = useState<string | null>(null)
 
   // 智能添加相关状态
@@ -118,27 +115,7 @@ export default function TodoListPage() {
   const pending = useMemo(() => todos.filter((t) => !t.completed), [todos])
   const done = useMemo(() => todos.filter((t) => t.completed), [todos])
 
-  function addTodo() {
-    if (!newTitle.trim()) return
-    const now = new Date().toISOString()
-    const item: Todo = {
-      id: crypto.randomUUID(),
-      title: newTitle.trim(),
-      description: newDesc.trim() || undefined,
-      completed: false,
-      deadlineDate: newDeadline || undefined,
-      note: undefined,
-      createdAt: now,
-      updatedAt: now,
-    }
-    const next = [item, ...todos]
-    setTodos(next)
-    saveTodos(next)
-    setNewTitle("")
-    setNewDesc("")
-    setNewDeadline("")
-    setShowForm(false)
-  }
+
 
   function toggleTodo(id: string, checked: boolean) {
     const next = todos.map((t) => (t.id === id ? { ...t, completed: checked, updatedAt: new Date().toISOString() } : t))
@@ -249,6 +226,7 @@ export default function TodoListPage() {
 
   return (
     <div className="min-h-screen bg-momentum-cream">
+      <AppHeader />
       <main className="mx-auto max-w-3xl px-4 py-6 mobile-nav-spacing mobile-spacing">
         {/* 庆祝消息 */}
         {celebrationMessage && (
@@ -263,19 +241,10 @@ export default function TodoListPage() {
             <Button
               size="sm"
               className="h-9 px-3 text-sm touch-feedback bg-momentum-coral hover:bg-momentum-coral-dark text-white"
-              onClick={() => setShowForm((v) => !v)}
+              onClick={() => setShowSmartAdd((v) => !v)}
             >
               <Plus className="mr-1 h-4 w-4" />
               添加待办
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 px-3 text-sm touch-feedback border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10"
-              onClick={() => setShowSmartAdd((v) => !v)}
-            >
-              <Sparkles className="mr-1 h-4 w-4" />
-              智能添加
             </Button>
             <Button
               size="sm"
@@ -289,60 +258,7 @@ export default function TodoListPage() {
           </div>
         </div>
 
-        {showForm && (
-          <Card className="mb-6 border-momentum-sage-light/30 bg-white">
-            <CardHeader className="py-4 border-b border-momentum-sage-light/20">
-              <CardTitle className="text-sm font-medium text-momentum-forest">新增待办</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              <div className="grid gap-2">
-                <label className="text-sm text-momentum-sage-dark">标题</label>
-                <Input
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="例如：写 README"
-                  className="h-10 text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="text-sm text-momentum-sage-dark">描述（可选）</label>
-                <Textarea
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="补充细节"
-                  className="min-h-[80px] text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="text-sm text-momentum-sage-dark">截止日期（可选）</label>
-                <Input
-                  type="date"
-                  value={newDeadline}
-                  onChange={(e) => setNewDeadline(e.target.value)}
-                  className="h-10 text-sm border-momentum-sage-light/30 focus:border-momentum-coral"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 text-sm border-momentum-sage-light text-momentum-sage-dark hover:bg-momentum-sage-light/10"
-                  onClick={() => setShowForm(false)}
-                >
-                  取消
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-8 px-3 text-sm bg-momentum-coral hover:bg-momentum-coral-dark text-white"
-                  onClick={addTodo}
-                  disabled={!newTitle.trim()}
-                >
-                  保存
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         {showSmartAdd && (
           <Card className="mb-6 border-momentum-sage-light/30 bg-white">
@@ -528,7 +444,7 @@ export default function TodoListPage() {
                   <div className="flex items-start gap-3 py-3 px-1 hover:bg-momentum-sage-light/5 rounded-lg transition-colors">
                     <button
                       onClick={() => toggleTodo(t.id, !t.completed)}
-                      className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 border-momentum-sage-light hover:border-momentum-coral flex items-center justify-center group-hover:scale-110 transition-all"
+                      className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border-2 border-momentum-sage-light hover:border-momentum-coral flex items-center justify-center group-hover:scale-110 transition-all"
                     >
                       {t.completed && (
                         <div className="w-1 h-1 rounded-full bg-momentum-coral"></div>
@@ -544,20 +460,12 @@ export default function TodoListPage() {
                           {t.description}
                         </div>
                       )}
-                      {(t.deadlineDate || t.note) && (
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {t.deadlineDate && (
-                            <span className="inline-flex items-center gap-1 text-xs text-momentum-sage-dark">
-                              <span className="w-1 h-1 bg-momentum-sage-dark rounded-full"></span>
-                              截止 {t.deadlineDate}
-                            </span>
-                          )}
-                          {t.note && (
-                            <span className="inline-flex items-center gap-1 text-xs text-momentum-coral">
-                              <span className="w-1 h-1 bg-momentum-coral rounded-full"></span>
-                              {t.note}
-                            </span>
-                          )}
+                      {t.deadlineDate && (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center gap-1 text-xs text-momentum-sage-dark">
+                            <span className="w-1 h-1 bg-momentum-sage-dark rounded-full"></span>
+                            截止 {t.deadlineDate}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -575,7 +483,7 @@ export default function TodoListPage() {
                   </div>
 
                   {/* 分隔线 */}
-                  <div className="ml-8 border-b border-momentum-sage-light/20 last:border-b-0"></div>
+                  <div className="ml-7 border-b border-momentum-sage-light/20 last:border-b-0"></div>
                 </li>
               ))}
               {pending.length === 0 && (
@@ -594,7 +502,7 @@ export default function TodoListPage() {
                   <div className="flex items-start gap-3 py-3 px-1 hover:bg-momentum-sage-light/5 rounded-lg transition-colors">
                     <button
                       onClick={() => toggleTodo(t.id, !t.completed)}
-                      className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 border-momentum-coral bg-momentum-coral flex items-center justify-center group-hover:scale-110 transition-all"
+                      className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border-2 border-momentum-coral bg-momentum-coral flex items-center justify-center group-hover:scale-110 transition-all"
                     >
                       <div className="w-1 h-1 rounded-full bg-white"></div>
                     </button>
@@ -631,7 +539,7 @@ export default function TodoListPage() {
                   </div>
 
                   {/* 分隔线 */}
-                  <div className="ml-8 border-b border-momentum-sage-light/20 last:border-b-0"></div>
+                  <div className="ml-7 border-b border-momentum-sage-light/20 last:border-b-0"></div>
                 </li>
               ))}
               {done.length === 0 && (
