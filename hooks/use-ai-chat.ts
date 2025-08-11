@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Memory } from "@/lib/memory"
 import { extractReasonsFromText, extractCommitStepsFromAi } from "@/lib/memory-extract"
 import { shouldSummarize, buildSummarySystem } from "@/lib/memory-summarize"
+import { sanitizeChatText } from "@/lib/sanitization"
 
 export type Role = "user" | "assistant" | "system"
 
@@ -710,10 +711,14 @@ export function useAiChat() {
     async (content: string, options?: SendMessageOptions): Promise<string | undefined> => {
       if (!content.trim() || isLoading) return
 
+      // 清洗用户输入，防止 Prompt Injection
+      const { clean: cleanContent } = sanitizeChatText(content)
+      if (!cleanContent.trim()) return
+
       // 若没有会话，创建并命名
       let sid = currentSessionId
       if (!sid) {
-        sid = startSession(options?.titleForNewSession || content.slice(0, 30))
+        sid = startSession(options?.titleForNewSession || cleanContent.slice(0, 30))
       }
 
       setError(null)
@@ -722,7 +727,7 @@ export function useAiChat() {
       const userMsg: ChatMessage = {
         id: makeId(),
         role: "user",
-        content: content.trim(),
+        content: cleanContent.trim(),
         timestamp: now(),
       }
       const nextMessages = [...messages, userMsg]

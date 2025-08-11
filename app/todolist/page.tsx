@@ -9,6 +9,7 @@ import { Trash2, Plus, Sparkles, Loader2 } from "lucide-react"
 import BottomNavigation from "@/components/bottom-navigation"
 import AppHeader from "@/components/app-header"
 import { recordTaskCompletion } from "@/lib/celebration"
+import { sanitizeTodoText } from "@/lib/sanitization"
 
 type Todo = {
   id: string
@@ -143,6 +144,10 @@ export default function TodoListPage() {
   async function parseTodos() {
     if (!smartText.trim()) return
 
+    // 清洗用户输入，防止 Prompt Injection
+    const { clean: cleanText } = sanitizeTodoText(smartText)
+    if (!cleanText.trim()) return
+
     setIsParsingTodos(true)
     setParseError(null)
 
@@ -152,7 +157,7 @@ export default function TodoListPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: smartText }),
+        body: JSON.stringify({ text: cleanText }),
       })
 
       if (!response.ok) {
