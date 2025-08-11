@@ -174,7 +174,7 @@ export default function ChatPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleQuickReply(reply.action, reply.text)}
-                          className="text-[11px] px-2 py-1 h-6 border-momentum-sage text-momentum-sage hover:bg-momentum-sage hover:text-white rounded-full flex-shrink-0"
+                          className="text-[10px] px-1.5 py-0.5 h-4 border-momentum-sage text-momentum-sage hover:bg-momentum-sage hover:text-white rounded-lg flex-shrink-0"
                         >
                           {reply.text}
                         </Button>
