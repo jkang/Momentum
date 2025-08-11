@@ -460,14 +460,12 @@ export default function TodoListPage() {
                           {t.description}
                         </div>
                       )}
-                      {t.deadlineDate && (
-                        <div className="mt-2">
-                          <span className="inline-flex items-center gap-1 text-xs text-momentum-sage-dark">
-                            <span className="w-1 h-1 bg-momentum-sage-dark rounded-full"></span>
-                            截止 {t.deadlineDate}
-                          </span>
-                        </div>
-                      )}
+                      <div className="mt-2">
+                        <span className="inline-flex items-center gap-1 text-xs text-momentum-sage-dark">
+                          <span className="w-1 h-1 bg-momentum-sage-dark rounded-full"></span>
+                          截止 {t.deadlineDate || "未设置"}
+                        </span>
+                      </div>
                     </div>
 
                     <Button
@@ -516,14 +514,12 @@ export default function TodoListPage() {
                           {t.description}
                         </div>
                       )}
-                      {t.deadlineDate && (
-                        <div className="mt-2">
-                          <span className="inline-flex items-center gap-1 text-xs text-momentum-sage-dark line-through">
-                            <span className="w-1 h-1 bg-momentum-sage-dark rounded-full"></span>
-                            截止 {t.deadlineDate}
-                          </span>
-                        </div>
-                      )}
+                      <div className="mt-2">
+                        <span className="inline-flex items-center gap-1 text-xs text-momentum-sage-dark line-through">
+                          <span className="w-1 h-1 bg-momentum-sage-dark rounded-full"></span>
+                          截止 {t.deadlineDate || "未设置"}
+                        </span>
+                      </div>
                     </div>
 
                     <Button

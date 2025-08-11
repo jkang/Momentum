@@ -35,6 +35,7 @@ const PARSE_SYSTEM_PROMPT = `你是一个专业的待办事项解析助手。你
    - "下周一"、"周三" → 对应的具体日期
    - "15:00前"、"晚饭后" → 今天的日期
    - 具体日期如"12月25日" → 转换为YYYY-MM-DD格式
+   - 如果没有明确时间信息，默认设置为明天
 
 4. 过滤规则：
    - 忽略明显的分析性文字（包含"因为"、"所以"、"建议"等）
@@ -118,13 +119,26 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // 清理AI返回的内容，移除可能的代码块标记
+      let cleanContent = content.trim()
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+      } else if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+      }
+
       // 尝试解析AI返回的JSON
-      const parsed = JSON.parse(content)
+      const parsed = JSON.parse(cleanContent)
       
       // 验证返回格式
       if (!parsed.todos || !Array.isArray(parsed.todos)) {
         throw new Error("Invalid response format")
       }
+
+      // 获取明天的日期
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const tomorrowStr = tomorrow.toISOString().slice(0, 10)
 
       // 验证每个待办事项的格式
       const validTodos = parsed.todos.filter((todo: any) => {
@@ -132,7 +146,7 @@ export async function POST(request: NextRequest) {
       }).map((todo: any) => ({
         title: todo.title.trim(),
         description: todo.description ? todo.description.trim() : undefined,
-        deadlineDate: todo.deadlineDate || undefined,
+        deadlineDate: todo.deadlineDate || tomorrowStr, // 默认设置为明天
         note: todo.note ? todo.note.trim() : undefined,
       }))
 
