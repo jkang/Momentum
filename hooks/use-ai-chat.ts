@@ -346,7 +346,7 @@ export function useAiChat() {
             collectingFor = 'tomorrow';
             continue;
         }
-        
+
         const isListItem = /^\s*(?:\d+\.|[-•]|\[\s*\])\s*(.+)/.test(line);
         if (!isListItem) {
             if (line.trim() !== '') {
@@ -362,7 +362,7 @@ export function useAiChat() {
             }
         }
     }
-    
+
     if (items.length === 0) {
         const genericKeywords = ['todo', '待办'];
         if (genericKeywords.some(kw => userLower.includes(kw))) {
@@ -398,14 +398,14 @@ export function useAiChat() {
     if (specificKeywords.some(k => userLower.includes(k))) {
       return { type: 'specific' }
     }
-    
+
     // 检测一般加到待办意图
     const generalKeywords = ["加到待办", "帮我加到待办", "添加到待办", "加入待办", "放到待办", "保存到待办", "记录到待办", "加到todolist", "加到todo", 'action', 'list', '总结', '安排', '计划']
     const uniqueKeywords = [...new Set(generalKeywords)]
     if (uniqueKeywords.some(k => userLower.includes(k))) {
       return { type: 'action_steps' }
     }
-    
+
     return { type: 'none' }
   }, [])
 
@@ -445,47 +445,93 @@ export function useAiChat() {
     return listPatterns.some(pattern => pattern.test(content))
   }, [])
 
-  // 解析AI回复中的选项标记，生成快捷回复
+  // 阶段识别与兜底选项
+  type Stage = 1 | 2 | 3 | 4 | 5
+  function detectStage(history: ChatMessage[], content: string): Stage {
+    const txt = content || ""
+    const hasList = /(^\d+\.|^[-•]|^\[\s*\]|^[∨图@钟]|^\s*(?:\d{1,2}:\d{2}前|早上\d{1,2}点|晚饭后|下午\d点前))/m.test(txt)
+    const mentionsToday = /今日|今天/.test(txt)
+    const mentionsTomorrow = /明日|明天/.test(txt)
+    if (/已添加|已加入待办|跳转|3秒后|3 秒后/.test(txt)) return 4
+    if (hasList) return 3
+    if (/(原因|为什么|卡住|困扰|不想做|没动力|焦虑|畏难)/.test(txt)) return 1
+    // 简单根据上一条用户意向推断：若上条用户包含“行动/放下”
+    const lastUser = [...history].reverse().find(m => m.role === 'user')?.content || ''
+    if (/放下|先放/.test(lastUser)) return 2
+    if (/行动|继续|拆解|开始|做/.test(lastUser)) return 2
+    // 默认回落到诊断
+    return 1
+  }
+
+  function getFallbackQuickReplies(stage: Stage, content: string): QuickReply[] {
+    const hasToday = /今日|今天/.test(content)
+    const hasTomorrow = /明日|明天/.test(content)
+    if (stage === 1) {
+      return [
+        { text: "说说原因", action: "select_option" },
+        { text: "我想先放下", action: "select_option" },
+        { text: "我想行动", action: "select_option" },
+      ]
+    }
+    if (stage === 3) {
+      const base: QuickReply[] = [
+        { text: "加到待办", action: "confirm_todo" },
+        { text: "再调整", action: "select_option" },
+      ]
+      if (hasToday && hasTomorrow) {
+        base.push({ text: "只加今日", action: "confirm_todo_today" })
+      } else if (hasToday) {
+        base.push({ text: "只加今日", action: "confirm_todo_today" })
+      } else if (hasTomorrow) {
+        base.push({ text: "只加明日", action: "confirm_todo_tomorrow" })
+      }
+      return base.slice(0, 3)
+    }
+    if (stage === 4) {
+      return [
+        { text: "继续聊聊", action: "select_option" },
+      ]
+    }
+    // Stage 2 / 5 兜底
+    return [
+      { text: "继续拆解", action: "select_option" },
+      { text: "我想先放下", action: "select_option" },
+      { text: "换个小目标", action: "select_option" },
+    ]
+  }
+
+
+  // 解析AI回复中的选项标记，生成快捷回复（不足时按阶段兜底）
   const parseQuickReplies = useCallback((content: string): QuickReply[] => {
-    // 匹配【选项】格式的文本
     const optionRegex = /【([^】]+)】/g
     const matches = content.match(optionRegex)
 
-    if (matches && matches.length >= 2) {
-      // 提取选项文本并生成快捷回复
-      const options = matches.map(match => {
+    let options: QuickReply[] = []
+    if (matches && matches.length > 0) {
+      options = matches.map(match => {
         const text = match.replace(/【|】/g, '')
-        return {
-          text,
-          action: "select_option"
-        }
+        return { text, action: "select_option" }
       })
-
-      // 去重并限制为最多3个选项
-      const uniqueOptions = options.filter((option, index, self) =>
-        index === self.findIndex(o => o.text === option.text)
-      ).slice(0, 3)
-
-      return uniqueOptions
+      // 去重并限制最多3个
+      options = options.filter((option, index, self) => index === self.findIndex(o => o.text === option.text)).slice(0, 3)
     }
 
-    // 如果没有明确的选项标记，但包含任务拆解，自动添加快捷选项
-    if (containsTaskBreakdown(content)) {
-      return [
-        { text: "加到待办", action: "confirm_todo" },
-        { text: "继续聊聊", action: "cancel_todo" }
-      ]
+    // 若选项不足（<2），根据阶段兜底
+    if (options.length < 2) {
+      const stage = detectStage(messages, content)
+      const fallback = getFallbackQuickReplies(stage, content)
+      return fallback.slice(0, 3)
     }
 
-    return []
-  }, [containsTaskBreakdown])
+    return options
+  }, [messages])
 
   // 处理快捷回复
   const handleQuickReply = useCallback((action: string, text: string) => {
     if (action === "select_option") {
       // 处理选项选择
       void sendMessage(text)
-    } else if (action === "confirm_todo") {
+    } else if (action === "confirm_todo" || action === "confirm_todo_today" || action === "confirm_todo_tomorrow") {
       // 添加用户消息
       const userMsg: ChatMessage = {
         id: makeId(),
@@ -499,13 +545,22 @@ export function useAiChat() {
       let todosToAdd: string[] = []
 
       if (lastAiMessage) {
-        // 使用智能提取方法获取所有待办项
-        const specificResult = extractSpecificTodos(lastAiMessage.content, "全部添加")
-        if (specificResult.type === 'specific' && specificResult.items.length > 0) {
-          todosToAdd = specificResult.items
-        } else {
-          // 回退到基础提取方法
-          todosToAdd = extractActionSteps(lastAiMessage.content)
+        // 使用智能提取方法获取待办项
+        if (action === "confirm_todo_today") {
+          const res = extractSpecificTodos(lastAiMessage.content, "今日")
+          if (res.type === 'specific') todosToAdd = res.items
+        } else if (action === "confirm_todo_tomorrow") {
+          const res = extractSpecificTodos(lastAiMessage.content, "明日")
+          if (res.type === 'specific') todosToAdd = res.items
+        }
+        // 若仍为空则尝试全量提取
+        if (todosToAdd.length === 0) {
+          const specificResult = extractSpecificTodos(lastAiMessage.content, "全部添加")
+          if (specificResult.type === 'specific' && specificResult.items.length > 0) {
+            todosToAdd = specificResult.items
+          } else {
+            todosToAdd = extractActionSteps(lastAiMessage.content)
+          }
         }
       }
 
@@ -684,16 +739,13 @@ export function useAiChat() {
 
         // 解析AI回复中的选项，自动生成快捷回复
         if (assistantMsg.content && !todoIntent) {
+          // 生成快捷回复（不足时按阶段兜底）
           const quickReplies = parseQuickReplies(assistantMsg.content)
-          if (quickReplies.length > 0) {
-            assistantMsg.quickReplies = quickReplies
+          assistantMsg.quickReplies = quickReplies
 
-            // 不需要预先设置pendingTodos，直接在用户确认时从AI回复中提取
-
-            working = [...nextMessages, { ...assistantMsg }]
-            setMessages(working)
-            persistMessages(working)
-          }
+          working = [...nextMessages, { ...assistantMsg }]
+          setMessages(working)
+          persistMessages(working)
         }
 
         // 处理待办相关意图
