@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
+import { useEffect, useState, useCallback } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { Home, MessageSquare, CheckSquare, Info } from "lucide-react"
 
 export default function BottomNavigation() {

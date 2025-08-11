@@ -29,8 +29,8 @@ export function PullToRefresh({ onRefresh, children, threshold = 80 }: PullToRef
 
       // 检查是否点击在可点击元素上，避免拦截按钮点击
       const target = e.target as Element
-      if (target.closest('a, button, [role="button"], .quick-select-card, .touch-feedback')) {
-        return // 不拦截按钮和链接点击
+      if (target.closest('a, button, [role="button"], input, textarea, select, .quick-select-card, .touch-feedback, [data-clickable]')) {
+        return // 不拦截交互元素的触摸事件
       }
 
       const touchY = e.touches[0].clientY

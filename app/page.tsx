@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import AppHeader from "@/components/app-header"
 import BottomNavigation from "@/components/bottom-navigation"
 import { PullToRefresh } from "@/components/mobile-enhancements"
@@ -72,9 +73,12 @@ function formatDate(date: Date) {
 }
 
 export default function HomePage() {
+  const router = useRouter()
   const [todos, setTodos] = useState<StoredTodo[]>([])
   const [completionStats, setCompletionStats] = useState({ totalCompleted: 0, completedToday: 0, lastCompletionDate: "", streak: 0 })
   const [showLaunchScreen, setShowLaunchScreen] = useState<boolean | null>(null) // null表示还在检查
+  const [isNavigating, setIsNavigating] = useState(false) // 防抖状态
+  const [clickingCard, setClickingCard] = useState<number | null>(null) // 点击反馈状态
 
   const loadTodos = () => {
     try {
@@ -85,6 +89,41 @@ export default function HomePage() {
       setTodos([])
     }
   }
+
+  // 防抖导航处理函数
+  const handleNavigation = useCallback((href: string, cardId?: number) => {
+    if (isNavigating) return // 防止重复点击
+
+    setIsNavigating(true)
+    if (cardId) setClickingCard(cardId)
+
+    // 添加视觉反馈延迟
+    setTimeout(() => {
+      router.push(href)
+      setIsNavigating(false)
+      setClickingCard(null)
+    }, 150) // 150ms 的反馈延迟
+  }, [isNavigating, router])
+
+  // 处理聊天导航的特殊函数
+  const handleChatNavigation = useCallback((text: string, title: string, expert?: number, cardId?: number) => {
+    if (isNavigating) return
+
+    setIsNavigating(true)
+    if (cardId) setClickingCard(cardId)
+
+    setTimeout(() => {
+      const params = new URLSearchParams({
+        autostart: "1",
+        text,
+        title,
+        ...(expert && { expert: "1" })
+      })
+      router.push(`/chat?${params.toString()}`)
+      setIsNavigating(false)
+      setClickingCard(null)
+    }, 150)
+  }, [isNavigating, router])
 
   // 检查是否首次访问
   useEffect(() => {
@@ -97,21 +136,31 @@ export default function HomePage() {
     }
   }, [])
 
-  // 读取本地待办和完成统计
+  // 异步读取本地待办和完成统计，避免阻塞主线程
   useEffect(() => {
-    loadTodos()
-    setCompletionStats(getCompletionStats())
+    // 使用 setTimeout 将 localStorage 操作移到下一个事件循环
+    const loadData = () => {
+      setTimeout(() => {
+        loadTodos()
+        setCompletionStats(getCompletionStats())
+      }, 0)
+    }
+
+    loadData()
 
     const onStorage = (e: StorageEvent) => {
       // 接收待办页的自定义通知
       if (e.key === "momentum-todos") {
-        try {
-          const raw = localStorage.getItem("momentum-todos")
-          const arr: StoredTodo[] = raw ? JSON.parse(raw) : []
-          setTodos(arr)
-        } catch {
-          // ignore
-        }
+        // 异步处理 storage 事件
+        setTimeout(() => {
+          try {
+            const raw = localStorage.getItem("momentum-todos")
+            const arr: StoredTodo[] = raw ? JSON.parse(raw) : []
+            setTodos(arr)
+          } catch {
+            // ignore
+          }
+        }, 0)
       }
     }
     window.addEventListener("storage", onStorage as any)
@@ -260,16 +309,21 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {QUICK_QUESTIONS.map((q) => {
               const Icon = q.icon
-              const qs = new URLSearchParams({
-                autostart: "1",
-                text: q.text,
-                title: q.title,
-                ...(q.expert ? { expert: "1" } : {}),
-              }).toString()
+              const isClicking = clickingCard === q.id
               return (
-                <Link key={q.id} href={`/chat?${qs}`} className="quick-select-card">
+                <button
+                  key={q.id}
+                  onClick={() => handleChatNavigation(q.text, q.title, q.expert, q.id)}
+                  disabled={isNavigating}
+                  data-clickable="true"
+                  className={`quick-select-card w-full text-left transition-all duration-150 ${
+                    isClicking ? 'scale-95 bg-momentum-sage-light-10' : ''
+                  } ${isNavigating ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+                >
                   <div className="flex items-start space-x-3">
-                    <div className={`quick-select-icon ${q.iconBg}`}>
+                    <div className={`quick-select-icon ${q.iconBg} transition-transform duration-150 ${
+                      isClicking ? 'scale-90' : ''
+                    }`}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -277,7 +331,7 @@ export default function HomePage() {
                       <p className="text-momentum-muted text-xs leading-relaxed">{q.description}</p>
                     </div>
                   </div>
-                </Link>
+                </button>
               )
             })}
 
