@@ -184,19 +184,20 @@ export default function HomePage() {
 
   const urgent = useMemo(() => {
     const now = new Date()
-    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    const today = new Date(now)
+    today.setHours(0, 0, 0, 0) // 今天00:00:00
+
     const result: Array<{ id: string; title: string; status: "overdue" | "soon"; deadlineDate: string }> = []
 
     todos.forEach((t) => {
       if (t.completed) return
       if (!t.deadlineDate) return
       const dueEnd = parseDateToEndOfDay(t.deadlineDate)
-      if (dueEnd.getTime() < now.getTime()) {
+
+      // 只有昨天或更早到期的才显示为过期提醒
+      // 当日到期的不提醒
+      if (dueEnd.getTime() < today.getTime()) {
         result.push({ id: t.id, title: t.title, status: "overdue", deadlineDate: t.deadlineDate })
-        return
-      }
-      if (dueEnd.getTime() <= in24h.getTime()) {
-        result.push({ id: t.id, title: t.title, status: "soon", deadlineDate: t.deadlineDate })
       }
     })
     // 仅展示最多 3 条
@@ -231,19 +232,13 @@ export default function HomePage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-momentum-forest font-medium">
-                  有待办已超期或将在 24 小时内到期，请尽快处理：
+                  有待办已超期，请尽快处理：
                 </p>
                 <ul className="mt-2 space-y-1">
                   {urgent.map((u) => (
                     <li key={u.id} className="text-sm text-momentum-forest flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] ${
-                          u.status === "overdue"
-                            ? "bg-momentum-coral/10 text-momentum-coral"
-                            : "bg-momentum-sage/10 text-momentum-sage"
-                        }`}
-                      >
-                        {u.status === "overdue" ? "已超期" : "即将到期"}
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-momentum-coral/10 text-momentum-coral">
+                        已超期
                       </span>
                       <span className="truncate">{u.title}</span>
                       <span className="text-momentum-muted text-xs">（截止：{u.deadlineDate}）</span>
