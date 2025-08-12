@@ -285,7 +285,7 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 200ms;
     border-radius: 16px;
-    min-height: 44px;
+    min-height: 36px;
   }
   .quick-select-card:hover {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -296,7 +296,7 @@
   /* 移动端优化 */
   @media (max-width: 768px) {
     .quick-select-card {
-      padding: 16px;
+      padding: 10px;
       margin: 4px 0;
     }
     .quick-select-card:hover {
@@ -330,9 +330,9 @@
     /* PC 端样式 */
     font-size: 12px;
     padding: 6px 12px;
-    height: 32px;
-    min-height: 32px;
-    line-height: 1.2;
+    height: 28px;
+    min-height: 28px;
+    line-height: 1.1;
   }
 
   .quick-reply-button:hover {
@@ -345,10 +345,10 @@
     .quick-reply-button {
       font-size: 12px;
       padding: 6px 12px;
-      height: 32px;
-      min-height: 32px;
+      height: 28px;
+      min-height: 28px;
       min-width: 44px; /* 确保触摸目标足够大 */
-      line-height: 1.2;
+      line-height: 1.1;
     }
   }
 
